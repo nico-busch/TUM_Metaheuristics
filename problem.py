@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Problem:
 
     def __init__(self,
@@ -9,7 +12,6 @@ class Problem:
                  p_i,
                  w_kl,
                  f_ij):
-
         self.n = n
         self.m = m
         self.a_i = a_i
@@ -19,21 +21,39 @@ class Problem:
         self.w_kl = w_kl
         self.f_ij = f_ij
 
-    def __init__(self,
-                 n,
-                 m):
+        self.x_ik = []
+        self.c_i = []
+        self.y_ij = []
+        self.z_ijkl = []
 
-        self.n = n
-        self.m = m
+
 
     def create_data(self):
+        return 'hello world'
 
-# subroutines
+    def shift_left(self, k, i):
+        foo = [x for _, x in sorted(zip(self.x_ik[i:, k], self.c_i[i:]))]
+        for x in range(len(self.x_ik[i:, k])):
+            if i + x == 0:
+                self.c_i[i + x] = self.a_i[i + x]
+            else:
+                self.c_i[i + x] = max(self.a_i[i + x], self.c_i[i + x - 1] + self.d_i[i + x - 1])
+        print(foo)
 
-    def shift_left(self, gate, flight):
+    def shift_right(self, k , i, t):
+        temp = self.c_i
+        violation = False
+        for x in range(len(self.x_ik[i:, k])):
+            if i + x == 0 & t + self.d_i[i + x] <= self.b_i[i + x]:
+                temp[i + x] = t
+            elif temp[i + x - 1] + self.d_i[i + x - 1] + self.d_i[i + x]:
+                temp[i + x] = max(temp[i + x - 1], temp[i + x - 1] + self.d_i[i + x - 1])
+            else:
+                violation = True
+        if not violation:
+            self.c_i = temp
 
-
-    def shift_right(self):
+    def attempt_shift_right(self):
         return 'hello world'
 
     def shift_interval(self):
@@ -59,5 +79,4 @@ class Problem:
 
     def solve(self):
         return 'hello world'
-
 
