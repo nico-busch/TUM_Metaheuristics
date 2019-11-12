@@ -1,33 +1,37 @@
 class Problem:
 
     def __init__(self,
-                 number_of_flights,
-                 number_of_gates,
-                 flight_parameters,
-                 walking_distance,
-                 number_of_passengers):
+                 n,
+                 m,
+                 a_i,
+                 b_i,
+                 d_i,
+                 p_i,
+                 w_kl,
+                 f_ij):
 
-        self.number_of_flights = number_of_flights
-        self.number_of_gates = number_of_gates
-        self.flight_parameters = flight_parameters,
-        self.walking_distance = walking_distance,
-        self.number_of_passengers = number_of_passengers
+        self.n = n
+        self.m = m
+        self.a_i = a_i
+        self.b_i = b_i
+        self.d_i = d_i
+        self.p_i = p_i
+        self.w_kl = w_kl
+        self.f_ij = f_ij
 
     def __init__(self,
-                 number_of_flights,
-                 number_of_gates):
-        self.number_of_flights = number_of_flights
-        self.number_of_gates = number_of_gates
-        self.flight_parameters = 2,
-        self.walking_distance = 1,
-        self.number_of_passengers = 3
+                 n,
+                 m):
 
-    def create_data(self, oli):
+        self.n = n
+        self.m = m
 
-# Allgemeine Methoden
+    def create_data(self):
 
-    def shift_left(self):
-        return 'hello world'
+# subroutines
+
+    def shift_left(self, gate, flight):
+
 
     def shift_right(self):
         return 'hello world'
