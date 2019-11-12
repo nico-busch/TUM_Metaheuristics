@@ -1,3 +1,5 @@
+import numpy
+
 class Problem:
 
     def __init__(self,
@@ -28,13 +30,26 @@ class Problem:
 
     def create_data(self):
 
+        # distance matrix
+        self.w_kl = list()
+        for k in range(self.m):
+            self.w_kl[k] = list()
+            for l in range(self.m):
+                if (k % 2 == 0) == (l % 2 == 0):
+                    self.w_kl[k][l] = math.sqrt((k - l) ** 2)
+                else:
+                    self.w_kl[k][l] = k - 2 + 3 + l - 1
+
+        print(self.w_kl)
+
+
 # subroutines
 
     def shift_left(self, gate, flight):
-
+        return 'hello world'
 
     def shift_right(self):
-        return 'hello world'
+       return 'hello world'
 
     def shift_interval(self):
         return 'hello world'
