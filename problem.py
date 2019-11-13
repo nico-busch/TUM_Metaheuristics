@@ -1,164 +1,138 @@
 import numpy as np
+import pandas as pd
 import math
+
 
 class Problem:
 
-    # todo recode init function with only n and m as input parameter and calling of create data function
     def __init__(self,
                  n,
-                 m,
-                 a_i,
-                 b_i,
-                 d_i,
-                 p_i,
-                 w_kl,
-                 f_ij):
+                 m):
 
         self.n = n
         self.m = m
-        self.a_i = a_i
-        self.b_i = b_i
-        self.d_i = d_i
-        self.p_i = p_i
-        self.w_kl = w_kl
-        self.f_ij = f_ij
+        self.i = range(1, n + 1)
+        self.k = range(1, m + 1)
+        self.a_i = pd.DataFrame()
+        self.b_i = pd.DataFrame()
+        self.d_i = pd.DataFrame()
+        self.p_i = pd.DataFrame()
+        self.w_kl = pd.DataFrame()
+        self.f_ij = pd.DataFrame()
 
-        self.x_ik = []
-        self.c_i = []
-        self.y_ij = []
-        self.z_ijkl = []
+        self.c_i = pd.DataFrame()
+        self.x_ik = pd.DataFrame()
+        self.y_ij = pd.DataFrame()
+        self.z_ijkl = pd.DataFrame()
+
+        feasible = False
+        while not feasible:
+            self.create_data()
+            feasible = self.create_initial_solution()
 
     # creates data with regards to the number of flights n and number of gates m
     def create_data(self):
+        a = np.empty([self.n])
+        b = np.empty([self.n])
+        d = np.empty([self.n])
+        p = np.empty([self.n])
+        f = np.empty([self.n, self.n])
         # parameter
-        self.a_i = np.empty([self.n])
-        self.b_i = np.empty([self.n])
-        self.d_i = np.empty([self.n])
-        self.p_i = np.empty([self.n])
-        self.f_ij = np.empty([self.n, self.n])
-        des = 0.8
+        des = 0.7
         # setting of random values
         for i in range(self.n):
-            self.a_i[i] = np.random.uniform(1, self.n*70/self.m)
-            self.b_i[i] = self.a_i[i] + np.random.uniform(45,74)
-            self.d_i[i] = des*(self.b_i[i] - self.a_i[i])
-            self.p_i[i] = np.random.uniform(10,14)
+            a[i] = np.random.uniform(1, self.n * 70 / self.m)
+            b[i] = a[i] + np.random.uniform(45, 74)
+            d[i] = des * (b[i] - a[i])
+            p[i] = np.random.uniform(10, 14)
             for j in range(self.n):
-                if (self.a_i[i] < self.a_i[j]):
-                    self.f_ij[i][j] = np.random.random_integers(6, 60)
+                if a[i] < a[j]:
+                    f[i][j] = np.random.random_integers(6, 60)
                 else:
-                    self.f_ij[i][j] = 0
+                    f[i][j] = 0
         # gate distances
-        self.createDistanceMatrix()
+        w = self.create_distance_matrix()
         # print(self.a_i) # Todo delete if not necessary anymore
-        if (self.createInitialSolution()==False):
-            # No feasibility secured. Try to another random data set again
-            self.create_data()
-        else:
-            # todo delete if not necessary anymore
-            """
-            print("x_ik: ")
-            print(self.x_ik) #todo delete if not necessary anymore
-            print("c_i: ")
-            print(self.c_i)
-            print("d_i: ")
-            print(self.d_i)
-            print("c_i + d_i: ")
-            print(self.d_i+self.c_i)
-            print("b_i: ")
-            print(self.b_i)
-            """
+
+        self.a_i = pd.DataFrame(data={'a': a, 'i': self.i}).set_index('i')
+        self.b_i = pd.DataFrame(data={'b': b, 'i': self.i}).set_index('i')
+        self.d_i = pd.DataFrame(data={'d': d, 'i': self.i}).set_index('i')
+        self.p_i = pd.DataFrame(data={'p': p, 'i': self.i}).set_index('i')
+        self.w_kl = pd.DataFrame(data={'w': w.flatten()},
+                                 index=pd.MultiIndex.from_product([self.k, self.k],
+                                                                  names=['k', 'l']))
+        self.f_ij = pd.DataFrame(data={'f': f.flatten()},
+                                 index=pd.MultiIndex.from_product([self.i, self.i],
+                                                                  names=['i', 'j']))
 
     # distance matrix
-    def createDistanceMatrix(self):
-        self.w_kl = np.empty([self.m, self.m])
+    def create_distance_matrix(self):
+        w = np.empty([self.m, self.m])
         for k in range(self.m):
             kk = k + 1
             for l in range(self.m):
-                ll = l+1
+                ll = l + 1
                 if (kk % 2 == 0) == (ll % 2 == 0):
-                    self.w_kl[k][l] = math.sqrt(((kk - ll)*0.5) ** 2)
-                elif (kk%2==0):
-                    self.w_kl[k][l] = 3 + math.sqrt(((kk - 2)*0.5) ** 2) + math.sqrt(((ll - 1)*0.5) ** 2)
-                elif (ll%2==0):
-                    self.w_kl[k][l] = 3 + math.sqrt(((ll - 2)*0.5) ** 2) + math.sqrt(((kk - 1)*0.5) ** 2)
+                    w[k][l] = math.sqrt(((kk - ll) * 0.5) ** 2)
+                elif kk % 2 == 0:
+                    w[k][l] = 3 + math.sqrt(((kk - 2) * 0.5) ** 2) + math.sqrt(((ll - 1) * 0.5) ** 2)
+                elif ll % 2 == 0:
+                    w[k][l] = 3 + math.sqrt(((ll - 2) * 0.5) ** 2) + math.sqrt(((kk - 1) * 0.5) ** 2)
                 else:
-                    self.w_kl[k][l] = math.sqrt(((kk - ll) * 0.5) ** 2)
+                    w[k][l] = math.sqrt(((kk - ll) * 0.5) ** 2)
+        return w
         # print(self.w_kl) Todo delete if not necessary anymore
 
     # creates a feasible initial solution
-    def createInitialSolution(self):
-        # Todo adapt to Nico changes
-        #flights_ascending = np.empty([self.n])
-        flights_ascending = np.arange(self.n)
-        #self.x_ik = np.empty([self.m, self.n])
-        self.x_ik = np.arange(self.n*self.m).reshape(self.m,self.n)
-        a_i_copy = np.empty([self.n])
-        # sorting flights ascending regarding a_i
-        for i in range(self.n):
-            a_i_copy[i] = self.a_i[i]
-        for i in range(self.n):
-            low = 0
-            for j in range(self.n):
-                if(a_i_copy[j] < a_i_copy[low]):
-                    low = j
-            flights_ascending[i] = low
-            a_i_copy[low] = self.n*70 # is higher than every possible a_i number
-        # filling into the x_ik-matrix
-        count = 0
-        for i in range(self.n):
-            for k in range(self.m):
-                if(count < self.n):
-                    self.x_ik[k][i] = flights_ascending[count]
+    def create_initial_solution(self):
+        self.x_ik = pd.DataFrame(data={'x': 0},
+                                 index=pd.MultiIndex.from_product([self.i, self.k],
+                                                                  names=['i', 'k']))
+        self.c_i = pd.DataFrame(data={'c': 0, 'i': self.i}).set_index('i')
+        temp = self.a_i.sort_values(by=['a'])
+        for idx, row in temp.iterrows():
+            successful = False
+            count = 0
+            while not successful:
+                k = round(np.random.uniform(1, self.m))
+                temp = self.x_ik.loc[pd.IndexSlice[:, k], :].loc[self.x_ik['x'] == 1].index.get_level_values(0)
+                if max(self.c_i.loc[temp, 'c']
+                       + self.d_i.loc[temp, 'd'], default=0) <= self.a_i.loc[idx, 'a']:
+                    self.c_i.loc[idx] = self.a_i.loc[idx, 'a']
+                    self.x_ik.loc[(idx, k), :] = 1
+                    successful = True
+                elif max(self.c_i.loc[temp, 'c']
+                         + self.d_i.loc[temp, 'd']
+                         + self.d_i.loc[idx, 'd']) <= self.b_i.loc[idx, 'b']:
+                    self.c_i.loc[idx] = max(self.c_i.loc[temp, 'c'] + self.d_i.loc[temp, 'd'])
+                    self.x_ik.loc[(idx, k), :] = 1
+                    successful = True
+                else:
+                    successful = False
                     count += 1
-                else:
-                    self.x_ik[k][i] = -1 # values of x_ik are only valid if not -1
-        # setting c_i and checking if solution creation is possible
-        self.c_i = np.empty([self.n])
-        for i in range(self.n):
-            self.c_i[i] = -1 # initializing all values of c_i with -1
-        for i in range(self.n):
-            for k in range(self.m):
-                if(i==0):
-                    self.c_i[self.x_ik[k][0]] = self.a_i[self.x_ik[k][0]]
-                elif(self.x_ik[k][i] < 0):
-                    # nothing should happen as there is no flight number at this point
-                    1
-                elif( ( self.c_i[self.x_ik[k][i-1]] + self.d_i[self.x_ik[k][i-1]] ) <=
-                      ( self.b_i[self.x_ik[k][i]] - self.d_i[self.x_ik[k][i]] ) ):
-                    if(( self.c_i[self.x_ik[k][i-1]] + self.d_i[self.x_ik[k][i-1]] ) > self.a_i[self.x_ik[k][i]]):
-                        self.c_i[self.x_ik[k][i]] = self.c_i[self.x_ik[k][i-1]] + self.d_i[self.x_ik[k][i-1]]
-                    else:
-                        self.c_i[self.x_ik[k][i]] = self.a_i[self.x_ik[k][i]]
-                else:
-                    # no initial solution could be found (feasibility not secured)
-                    return False
+                    if count > 1000:
+                        return False
         return True
 
-    def getX(self):
-        return self.x_ik
-
-    # todo mit Nico abstimmen. Ich glaube die Methoden dürfen/sollten nicht zur Problemklasse gehören (Oli)
     def shift_left(self, k, i):
-        for x in range(len(self.x_ik[i:, k])):
-            if i + x == 0:
-                self.c_i[i + x] = self.a_i[i + x]
-            else:
-                self.c_i[i + x] = max(self.a_i[i + x], self.c_i[i + x - 1] + self.d_i[i + x - 1])
-        print(foo)
+        pos = self.x_ik.loc[pd.IndexSlice[:, k], :].loc[self.x_ik['x'] == 1].index.get_level_values(0)
+        temp = self.c_i.loc[pos].sort_values(by=['c'])
+        loc = temp.index.get_loc(i)
+        x = 1
+        prev = None
+        for idx, row in temp.iterrows():
+            if x >= loc:
+                if x == 1:
+                    self.c_i.loc[idx] = self.a_i.loc[idx, 'a']
+                else:
+                    self.c_i.loc[idx] = max(self.a_i.loc[idx, 'a'],
+                                            self.c_i.loc[prev, 'c']
+                                            + self.d_i.loc[prev, 'd'])
+            prev = idx
+            x += 1
 
-    def shift_right(self, k , i, t):
-        temp = self.c_i
-        violation = False
-        for x in range(len(self.x_ik[i:, k])):
-            if i + x == 0 & t + self.d_i[i + x] <= self.b_i[i + x]:
-                temp[i + x] = t
-            elif temp[i + x - 1] + self.d_i[i + x - 1] + self.d_i[i + x]:
-                temp[i + x] = max(temp[i + x - 1], temp[i + x - 1] + self.d_i[i + x - 1])
-            else:
-                violation = True
-        if not violation:
-            self.c_i = temp
+    def shift_right(self, k, i, t):
+        return 'hello world'
 
     def attempt_shift_right(self):
         return 'hello world'
