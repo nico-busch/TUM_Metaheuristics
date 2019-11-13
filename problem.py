@@ -121,7 +121,7 @@ class Problem:
             for k in range(self.m):
                 if(i==0):
                     self.c_i[self.x_ik[k][0]] = self.a_i[self.x_ik[k][0]]
-                elif(self.x_ik[k][i]==-1):
+                elif(self.x_ik[k][i] < 0):
                     # nothing should happen as there is no flight number at this point
                     1
                 elif( ( self.c_i[self.x_ik[k][i-1]] + self.d_i[self.x_ik[k][i-1]] ) <=
@@ -135,6 +135,10 @@ class Problem:
                     return False
         return True
 
+    def getX(self):
+        return self.x_ik
+
+    # todo mit Nico abstimmen. Ich glaube die Methoden dürfen/sollten nicht zur Problemklasse gehören (Oli)
     def shift_left(self, k, i):
         foo = [x for _, x in sorted(zip(self.x_ik[i:, k], self.c_i[i:]))]
         for x in range(len(self.x_ik[i:, k])):
@@ -184,4 +188,24 @@ class Problem:
     def solve(self):
         return 'hello world'
 
+# Hilfsklasse die Ergebnisse speichert
+# todo abstimmen mit Nico
+class Solution:
 
+    def __init__(self, x_ik, c_i):
+        self.x_ik = x_ik
+        self.c_i = c_i
+
+    # todo abstimmen mit Nico
+    def calculateObjectiveValue(self, Problem):
+        sumDelayPenalty = 0
+        for i in range(Problem.n):
+            sumDelayPenalty += Problem.p_i[i]*(self.c_i[i] - Problem.a_i[i])
+        sumWalkingDistance = 0
+        for i in range(Problem.n):
+            for j in range(Problem.n):
+                for k in range(Problem.m):
+                    for l in range(Problem.m):
+                        if(self.x_ik[k][i] > -1 and self.x_ik[l][j] > -1):
+                            sumWalkingDistance += Problem.w_kl[k][l]*Problem.f_ij[self.x_ik[k][i]][self.x_ik[l][j]]
+        return sumWalkingDistance + sumDelayPenalty
