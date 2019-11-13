@@ -114,7 +114,7 @@ class Problem:
                         return False
         return True
 
-    def shift_left(self, k, i):
+    def shift_left(self, i, k):
         pos = self.x_ik.loc[pd.IndexSlice[:, k], :].loc[self.x_ik['x'] == 1].index.get_level_values(0)
         temp = self.c_i.loc[pos].sort_values(by=['c'])
         loc = temp.index.get_loc(i)
@@ -135,7 +135,7 @@ class Problem:
         return 'hello world'
 
     def attempt_shift_right(self, k, i):
-
+        return 'hello world'
 
     def shift_interval(self):
         return 'hello world'
