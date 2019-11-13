@@ -188,7 +188,8 @@ class Problem:
     def solve(self):
         return 'hello world'
 
-# Hilfsklasse die Ergebnisse speichert
+# Hilfsklasse für die Berechnung von Ergebnissewerten (objective Function)
+# Generelle Trennung in Daten-Speicher-Klasse Problem (Input-Parameter) und Lösungsspeicher-Klasse Solution (Output decision variables)
 # todo abstimmen mit Nico
 class Solution:
 
