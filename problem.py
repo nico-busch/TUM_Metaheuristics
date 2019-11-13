@@ -140,7 +140,6 @@ class Problem:
 
     # todo mit Nico abstimmen. Ich glaube die Methoden dürfen/sollten nicht zur Problemklasse gehören (Oli)
     def shift_left(self, k, i):
-        foo = [x for _, x in sorted(zip(self.x_ik[i:, k], self.c_i[i:]))]
         for x in range(len(self.x_ik[i:, k])):
             if i + x == 0:
                 self.c_i[i + x] = self.a_i[i + x]
