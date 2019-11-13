@@ -161,8 +161,8 @@ class Problem:
         if not violation:
             self.c_i = temp
 
-    def attempt_shift_right(self):
-        return 'hello world'
+    def attempt_shift_right(self, k, i):
+
 
     def shift_interval(self):
         return 'hello world'
