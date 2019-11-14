@@ -3,6 +3,7 @@ import pandas as pd
 import math
 
 
+# this class only creates instances (objects) of the problem
 class Problem:
 
     def __init__(self,
@@ -13,6 +14,8 @@ class Problem:
         self.m = m
         self.i = range(1, n + 1)
         self.k = range(1, m + 1)
+
+        # initialize input dataframes
         self.a_i = pd.DataFrame()
         self.b_i = pd.DataFrame()
         self.d_i = pd.DataFrame()
@@ -20,18 +23,12 @@ class Problem:
         self.w_kl = pd.DataFrame()
         self.f_ij = pd.DataFrame()
 
-        self.c_i = pd.DataFrame()
-        self.x_ik = pd.DataFrame()
-        self.y_ij = pd.DataFrame()
-        self.z_ijkl = pd.DataFrame()
-
-        feasible = False
-        while not feasible:
-            self.create_data()
-            feasible = self.create_initial_solution()
+        # create initial data
+        self.create_data()
 
     # creates data with regards to the number of flights n and number of gates m
     def create_data(self):
+        # empty numpy arrays
         a = np.empty([self.n])
         b = np.empty([self.n])
         d = np.empty([self.n])
@@ -54,6 +51,7 @@ class Problem:
         w = self.create_distance_matrix()
         # print(self.a_i) # Todo delete if not necessary anymore
 
+        # create dataframes
         self.a_i = pd.DataFrame(data={'a': a, 'i': self.i}).set_index('i')
         self.b_i = pd.DataFrame(data={'b': b, 'i': self.i}).set_index('i')
         self.d_i = pd.DataFrame(data={'d': d, 'i': self.i}).set_index('i')
@@ -82,115 +80,3 @@ class Problem:
                     w[k][l] = math.sqrt(((kk - ll) * 0.5) ** 2)
         return w
         # print(self.w_kl) Todo delete if not necessary anymore
-
-    # creates a feasible initial solution
-    def create_initial_solution(self):
-        self.x_ik = pd.DataFrame(data={'x': 0},
-                                 index=pd.MultiIndex.from_product([self.i, self.k],
-                                                                  names=['i', 'k']))
-        self.c_i = pd.DataFrame(data={'c': 0, 'i': self.i}).set_index('i')
-        temp = self.a_i.sort_values(by=['a'])
-        for idx, row in temp.iterrows():
-            successful = False
-            count = 0
-            while not successful:
-                k = round(np.random.uniform(1, self.m))
-                temp = self.x_ik.loc[pd.IndexSlice[:, k], :].loc[self.x_ik['x'] == 1].index.get_level_values(0)
-                if max(self.c_i.loc[temp, 'c']
-                       + self.d_i.loc[temp, 'd'], default=0) <= self.a_i.loc[idx, 'a']:
-                    self.c_i.loc[idx] = self.a_i.loc[idx, 'a']
-                    self.x_ik.loc[(idx, k), :] = 1
-                    successful = True
-                elif max(self.c_i.loc[temp, 'c']
-                         + self.d_i.loc[temp, 'd']
-                         + self.d_i.loc[idx, 'd']) <= self.b_i.loc[idx, 'b']:
-                    self.c_i.loc[idx] = max(self.c_i.loc[temp, 'c'] + self.d_i.loc[temp, 'd'])
-                    self.x_ik.loc[(idx, k), :] = 1
-                    successful = True
-                else:
-                    successful = False
-                    count += 1
-                    if count > 1000:
-                        return False
-        return True
-
-    def get_schedule(self):
-        sched = self.x_ik.loc[self.x_ik['x'] == 1].join(
-            pd.concat([self.a_i, self.b_i, self.d_i, self.c_i], axis=1), how='inner').sort_values(
-            by=['k', 'c']).drop(['x'], axis=1)
-        return sched
-
-    def get_gate_schedule(self, k):
-        sched = self.x_ik.loc[pd.IndexSlice[:, k], :].loc[self.x_ik['x'] == 1].join(
-            pd.concat([self.a_i, self.b_i, self.d_i, self.c_i], axis=1), how='inner').sort_values(
-            by=['k', 'c']).drop(['x'], axis=1).reset_index(level=1, drop=True)
-        return sched
-
-    def shift_left(self, i, k):
-        sched = self.get_gate_schedule(k)
-        loc = sched.index.get_loc(i)
-        x = 1
-        prev = None
-        for idx, row in sched.iterrows():
-            if x >= loc:
-                if x == 1:
-                    self.c_i.loc[idx] = row['a']
-                else:
-                    self.c_i.loc[idx] = max(row['a'],
-                                            self.c_i.loc[prev, 'c']
-                                            + sched.loc[prev, 'd'])
-            prev = idx
-            x += 1
-
-    def shift_right(self, k, i, t):
-        return 'hello world'
-
-    def attempt_shift_right(self, k, i):
-        return 'hello world'
-
-    def shift_interval(self):
-        return 'hello world'
-
-    def attempt_shift_interval(self):
-        return 'hello world'
-
-    def attempt_shift_interval_right(self):
-        return 'hello world'
-
-    def insert(self):
-        return 'hello world'
-
-    def tabu_search(self):
-        return 'hello world'
-
-    def genetic_algorithm(self):
-        return 'hello world'
-
-    def memetic_algorithm(self):
-        return 'hello world'
-
-    def solve(self):
-        return 'hello world'
-
-# Hilfsklasse für die Berechnung von Ergebnissewerten (objective Function)
-# Generelle Trennung in Daten-Speicher-Klasse Problem (Input-Parameter) und Lösungsspeicher-Klasse Solution (Output decision variables)
-# todo abstimmen mit Nico
-class Solution:
-
-    def __init__(self, x_ik, c_i):
-        self.x_ik = x_ik
-        self.c_i = c_i
-
-    # todo abstimmen mit Nico
-    def calculateObjectiveValue(self, Problem):
-        sumDelayPenalty = 0
-        for i in range(Problem.n):
-            sumDelayPenalty += Problem.p_i[i]*(self.c_i[i] - Problem.a_i[i])
-        sumWalkingDistance = 0
-        for i in range(Problem.n):
-            for j in range(Problem.n):
-                for k in range(Problem.m):
-                    for l in range(Problem.m):
-                        if(self.x_ik[k][i] > -1 and self.x_ik[l][j] > -1):
-                            sumWalkingDistance += Problem.w_kl[k][l]*Problem.f_ij[self.x_ik[k][i]][self.x_ik[l][j]]
-        return sumWalkingDistance + sumDelayPenalty
