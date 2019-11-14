@@ -114,20 +114,31 @@ class Problem:
                         return False
         return True
 
+    def get_schedule(self):
+        sched = self.x_ik.loc[self.x_ik['x'] == 1].join(
+            pd.concat([self.a_i, self.b_i, self.d_i, self.c_i], axis=1), how='inner').sort_values(
+            by=['k', 'c']).drop(['x'], axis=1)
+        return sched
+
+    def get_gate_schedule(self, k):
+        sched = self.x_ik.loc[pd.IndexSlice[:, k], :].loc[self.x_ik['x'] == 1].join(
+            pd.concat([self.a_i, self.b_i, self.d_i, self.c_i], axis=1), how='inner').sort_values(
+            by=['k', 'c']).drop(['x'], axis=1).reset_index(level=1, drop=True)
+        return sched
+
     def shift_left(self, i, k):
-        pos = self.x_ik.loc[pd.IndexSlice[:, k], :].loc[self.x_ik['x'] == 1].index.get_level_values(0)
-        temp = self.c_i.loc[pos].sort_values(by=['c'])
-        loc = temp.index.get_loc(i)
+        sched = self.get_gate_schedule(k)
+        loc = sched.index.get_loc(i)
         x = 1
         prev = None
-        for idx, row in temp.iterrows():
+        for idx, row in sched.iterrows():
             if x >= loc:
                 if x == 1:
-                    self.c_i.loc[idx] = self.a_i.loc[idx, 'a']
+                    self.c_i.loc[idx] = row['a']
                 else:
-                    self.c_i.loc[idx] = max(self.a_i.loc[idx, 'a'],
+                    self.c_i.loc[idx] = max(row['a'],
                                             self.c_i.loc[prev, 'c']
-                                            + self.d_i.loc[prev, 'd'])
+                                            + sched.loc[prev, 'd'])
             prev = idx
             x += 1
 
