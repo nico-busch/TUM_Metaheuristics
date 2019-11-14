@@ -11,8 +11,8 @@ class Solve:
         self.prob = prob
         self.c_i = pd.DataFrame()
         self.x_ik = pd.DataFrame()
-        self.y_ij = pd.DataFrame()
-        self.z_ijkl = pd.DataFrame()
+        # self.y_ij = pd.DataFrame()
+        # self.z_ijkl = pd.DataFrame()
 
         self.create_initial_solution()
 
@@ -68,11 +68,11 @@ class Solve:
     def shift_left(self, i, k):
         sched = self.get_gate_schedule(k)
         loc = sched.index.get_loc(i)
-        x = 1
+        x = 0
         prev = None
         for idx, row in sched.iterrows():
             if x >= loc:
-                if x == 1:
+                if x == 0:
                     self.c_i.loc[idx] = row['a']
                 else:
                     self.c_i.loc[idx] = max(row['a'],
@@ -81,37 +81,64 @@ class Solve:
             prev = idx
             x += 1
 
-    def shift_right(self, k, i, t):
-        return 'hello world'
+    # shift right subroutine
+    def shift_right(self, i, k, t):
+        sched = self.get_gate_schedule(k)
+        loc = sched.index.get_loc(i)
+        x = 0
+        prev = None
+        for idx, row in sched.iterrows():
+            if x >= loc:
+                if x == loc:
+                    self.c_i.loc[idx] = t
+                else:
+                    self.c_i.loc[idx] = max(row['c'],
+                                            self.c_i.loc[prev, 'c']
+                                            + sched.loc[prev, 'd'])
+            prev = idx
+            x += 1
 
+    # todo
     def attempt_shift_right(self, k, i):
         return 'hello world'
 
+    # todo
     def shift_interval(self):
         return 'hello world'
 
+    # todo
     def attempt_shift_interval(self):
         return 'hello world'
 
+    # todo
     def attempt_shift_interval_right(self):
         return 'hello world'
 
+    # todo
     def insert(self):
         return 'hello world'
 
+    # todo
+    def insert(self):
+        return 'hello world'
+
+    # todo Oli
     def tabu_search(self):
         return 'hello world'
 
+    # todo Nico
     def genetic_algorithm(self):
         return 'hello world'
 
+    # todo ?
     def memetic_algorithm(self):
         return 'hello world'
 
+    # todo Dani
     def solve_optimal(self):
         return 'hello world'
 
-    # todo to be fixed
+    # todo Oli
     def calculate_objective_value(self, Problem):
         sumDelayPenalty = 0
         for i in range(Problem.n):
