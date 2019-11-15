@@ -68,9 +68,8 @@ class Solve:
     def shift_left(self, i, k):
         sched = self.get_gate_schedule(k)
         loc = sched.index.get_loc(i)
-        x = 0
         prev = None
-        for idx, row in sched.iterrows():
+        for x, (idx, row) in enumerate(sched.iterrows()):
             if x >= loc:
                 if x == 0:
                     self.c_i.loc[idx] = row['a']
@@ -79,15 +78,13 @@ class Solve:
                                             self.c_i.loc[prev, 'c']
                                             + sched.loc[prev, 'd'])
             prev = idx
-            x += 1
 
     # shift right subroutine
     def shift_right(self, i, k, t):
         sched = self.get_gate_schedule(k)
         loc = sched.index.get_loc(i)
-        x = 0
         prev = None
-        for idx, row in sched.iterrows():
+        for x, (idx, row) in enumerate(sched.iterrows()):
             if x >= loc:
                 if x == loc:
                     self.c_i.loc[idx] = t
@@ -96,7 +93,6 @@ class Solve:
                                             self.c_i.loc[prev, 'c']
                                             + sched.loc[prev, 'd'])
             prev = idx
-            x += 1
 
     # todo
     def attempt_shift_right(self, k, i):
