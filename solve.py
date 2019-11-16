@@ -175,12 +175,22 @@ class Solve:
         #minimize objective function
         model.setObjective(objective, GRB.MINIMIZE)
 
+        #constraints
+
+        for i in range(self.n):
+
+            outgoing_sum = LinExpr()
+            for k in range(self.m):
+
+                outgoing_sum += x[i, k]
+
+            model.addConstr(outgoing_sum, GRB.EQUAL, 1)
+
         model.update()
         model.optimize()
 
-
-
         return obj
+
 
     # todo Oli
     def calculate_objective_value(self, Problem):
