@@ -14,7 +14,8 @@ temp = sol.x_ik.loc[sol.x_ik['x'] == 1].iloc[15].name
 # test shift right and left
 print('initial:')
 print(sol.get_gate_schedule(temp[1]))
-sol.shift_right(temp[0], temp[1], sol.c_i.loc[temp[0]] + 5)
+t = sol.attempt_shift_right(temp[0], temp[1])
+sol.shift_right(temp[0], temp[1], t)
 print('shift right:')
 print(sol.get_gate_schedule(temp[1]))
 sol.shift_left(temp[0], temp[1])

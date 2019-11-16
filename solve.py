@@ -94,9 +94,22 @@ class Solve:
                                             + sched.loc[prev, 'd'])
             prev = idx
 
-    # todo
-    def attempt_shift_right(self, k, i):
-        return 'hello world'
+    def attempt_shift_right(self, i, k):
+        sched = self.get_gate_schedule(k).iloc[::-1]
+        loc = sched.index.get_loc(i)
+        temp = self.c_i
+        prev = None
+        t = 0
+        for x, (idx, row) in enumerate(sched.iterrows()):
+            if x <= loc:
+                if x == 0:
+                    temp.loc[idx] = row['b'] - row['d']
+                else:
+                    temp.loc[idx] = min(row['b'] - row['d'],
+                                        temp.loc[prev, 'c'] - row['d'])
+                t = temp.loc[idx, 'c']
+            prev = idx
+        return t
 
     # todo
     def shift_interval(self):
