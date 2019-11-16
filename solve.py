@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from gurobipy import *
 import math
 
 
@@ -175,7 +176,51 @@ class Solve:
 
     # todo Dani
     def solve_optimal(self):
-        return 'hello world'
+
+        model = Model()
+
+        #Creation of decision variables
+        x = {}
+        for i in range(self.n):
+            for k in range(self.m):
+                if i != k:
+                    x[i, k] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'x[{i},{k}]')
+
+        y = {}
+        for i, j in range(self.n):
+            if i != j:
+                y[i, j] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'y[{i},{j}]')
+
+        z = {}
+        for i, j in range(self.n):
+            for k,l in range(self.m):
+                z[i, j, k, l] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'z[{i},{j},{k},{l}]')
+
+
+        #objective
+        objective = LinExpr()
+        for i, j in range(self.n):
+            for k, l in range(self.m):
+                objective
+        #minimize objective function
+        model.setObjective(objective, GRB.MINIMIZE)
+
+        #constraints
+
+        for i in range(self.n):
+
+            outgoing_sum = LinExpr()
+            for k in range(self.m):
+
+                outgoing_sum += x[i, k]
+
+            model.addConstr(outgoing_sum, GRB.EQUAL, 1)
+
+        model.update()
+        model.optimize()
+
+        return obj
+
 
     # todo Oli
     def calculate_objective_value(self, Problem):
