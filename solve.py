@@ -97,9 +97,8 @@ class Solve:
     def attempt_shift_right(self, i, k):
         sched = self.get_gate_schedule(k).iloc[::-1]
         loc = sched.index.get_loc(i)
-        temp = self.c_i
+        temp = self.c_i.copy()
         prev = None
-        t = 0
         for x, (idx, row) in enumerate(sched.iterrows()):
             if x <= loc:
                 if x == 0:
@@ -107,25 +106,56 @@ class Solve:
                 else:
                     temp.loc[idx] = min(row['b'] - row['d'],
                                         temp.loc[prev, 'c'] - row['d'])
-                t = temp.loc[idx, 'c']
             prev = idx
-        return t
+        return temp.loc[i, 'c']
 
-    # todo
-    def shift_interval(self):
-        return 'hello world'
+    def shift_interval(self, i, j, k, t):
+        sched = self.get_gate_schedule(k)
+        loc1 = sched.index.get_loc(i)
+        loc2 = sched.index.get_loc(j)
+        prev = None
+        for x, (idx, row) in enumerate(sched.iterrows()):
+            if loc1 <= x <= loc2:
+                if x == loc1:
+                    self.c_i.loc[idx] = t
+                else:
+                    self.c_i.loc[idx] = max(row['c'],
+                                            self.c_i.loc[prev, 'c']
+                                            + sched.loc[prev, 'd'])
+            prev = idx
 
-    # todo
-    def attempt_shift_interval(self):
-        return 'hello world'
+    def attempt_shift_interval(self, i, j, k, t):
+        sched = self.get_gate_schedule(k)
+        loc1 = sched.index.get_loc(i)
+        loc2 = sched.index.get_loc(j)
+        temp = self.c_i.copy()
+        prev = None
+        for x, (idx, row) in enumerate(sched.iterrows()):
+            if loc1 <= x <= loc2:
+                if x == loc1:
+                    temp.loc[idx] = t
+                else:
+                    temp.loc[idx] = max(row['c'],
+                                        temp.loc[prev, 'c']
+                                        + sched.loc[prev, 'd'])
+            prev = idx
+        return temp.loc[j, 'c'] + sched.loc[j, 'd']
 
-    # todo
-    def attempt_shift_interval_right(self):
-        return 'hello world'
-
-    # todo
-    def insert(self):
-        return 'hello world'
+    def attempt_shift_interval_right(self, i, j, k):
+        sched = self.get_gate_schedule(k).iloc[::-1]
+        loc1 = sched.index.get_loc(i)
+        loc2 = sched.index.get_loc(j)
+        temp = self.c_i.copy()
+        prev = None
+        for x, (idx, row) in enumerate(sched.iterrows()):
+            if loc2 <= x <= loc1:
+                if x == 0:
+                    temp.loc[idx] = row['b'] - row['d']
+                else:
+                    temp.loc[idx] = min(row['b'] - row['d'],
+                                        temp.loc[prev, 'c'] - row['d'])
+            prev = idx
+        return temp.loc[i, 'c']
 
     # todo
     def insert(self):
