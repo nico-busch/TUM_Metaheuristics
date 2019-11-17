@@ -179,6 +179,9 @@ class Solve:
 
         model = Model()
 
+        model.Params.M = 100.0
+
+
         #Creation of decision variables
         x = {}
         for i in range(self.n):
@@ -193,33 +196,50 @@ class Solve:
 
         z = {}
         for i, j in range(self.n):
-            for k,l in range(self.m):
+            for k, l in range(self.m):
                 z[i, j, k, l] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'z[{i},{j},{k},{l}]')
+
+        c = {}
+        for i in range(self.n):
+            c[i] = model.addVar(lb=0.0, ub=null, vtype=GRB.CONTINUOUS, name=f'c[{i}]')
+
 
 
         #objective
         objective = LinExpr()
-        for i, j in range(self.n):
-            for k, l in range(self.m):
-                objective
+
+        objective = \
+                    quicksum(f[i, j]*w[k, l]*z[i, j, k, l] for i, j in range(self.n) for k, l in range(self.m)) \
+                    + quicksum(p[i]*(c[i]-a[i]) for i in range(self.n))
+
+
         #minimize objective function
         model.setObjective(objective, GRB.MINIMIZE)
 
         #constraints
 
+        #c1
         for i in range(self.n):
+            model.addConstr(quicksum(x[i, k] for k in range(self.m)), GBR.EQUAL, 1)
 
-            outgoing_sum = LinExpr()
-            for k in range(self.m):
+        #c2
+        for i, j in range(selff.n):
+            for k, l in range(self.m):
+                model.addConstr(z[i, j, k, l] <= x[i, k])
 
-                outgoing_sum += x[i, k]
+        #c3
+        for i, j in range(self.n):
+            for k, l in range(self.m):
+                model.addConstr(z[i, j, k, l] <= x[j, l])
 
-            model.addConstr(outgoing_sum, GRB.EQUAL, 1)
+
+
+
 
         model.update()
         model.optimize()
 
-        return obj
+        return model.objVal
 
 
     # todo Oli
