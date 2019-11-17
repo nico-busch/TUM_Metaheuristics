@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
-from gurobipy import *
+#from gurobipy import *
 import math
+from problem import Problem
 
 
 # this class can solve objects of class Problem
@@ -256,15 +257,19 @@ class Solve:
         return model.objVal
 
     # todo Oli
-    def calculate_objective_value(self, Problem):
+    def calculate_objective_value(self):
         sumDelayPenalty = 0
-        for i in range(Problem.n):
-            sumDelayPenalty += Problem.p_i[i]*(self.c_i[i] - Problem.a_i[i])
+        df_temp = pd.DataFrame()
+        df_temp = pd.concat([self.c_i,self.prob.a_i, self.prob.p_i], axis=1)
+        for index, row in df_temp.iterrows():
+            sumDelayPenalty += row['p']*(row['c']-row['a'])
         sumWalkingDistance = 0
-        for i in range(Problem.n):
-            for j in range(Problem.n):
-                for k in range(Problem.m):
-                    for l in range(Problem.m):
-                        if(self.x_ik[k][i] > -1 and self.x_ik[l][j] > -1):
-                            sumWalkingDistance += Problem.w_kl[k][l]*Problem.f_ij[self.x_ik[k][i]][self.x_ik[l][j]]
-        return sumWalkingDistance + sumDelayPenalty
+        for idx1, row1 in self.x_ik.iterrows():
+            for idx2, row2 in self.x_ik.iterrows():
+                if(idx1[0] != idx2[0] and idx1[1] != idx2[1]):
+                    w_tmp = self.prob.w_kl.loc[(idx1[1],idx2[1]), 'w']
+                    f_tmp = self.prob.f_ij.loc[(idx1[0], idx2[0]),'f']
+                    x_mul = self.x_ik.loc[idx1,'x']*self.x_ik.loc[idx2,'x']
+                    sumWalkingDistance += w_tmp*f_tmp*x_mul
+        self.objective_value = sumWalkingDistance + sumDelayPenalty
+        return self.objective_value

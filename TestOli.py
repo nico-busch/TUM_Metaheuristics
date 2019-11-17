@@ -1,19 +1,13 @@
 from problem import Problem
-from problem import Solution
 import numpy as np
+from solve import Solve
 
-tmp = Problem(4, 2, 0, 0, 0, 0, 0, 0)
-tmp.create_data()
-sol = Solution(tmp.x_ik, tmp.c_i)
+tmp = Problem(4,2)
+print(tmp.w_kl)
+print(tmp.f_ij)
+tmp_sol = Solve(tmp)
+print(tmp_sol.x_ik)
+print(tmp_sol.calculate_objective_value())
 
-print("delay time value: ")
-print((tmp.c_i - tmp.a) * tmp.p)
-print("w_kl: ")
-print(tmp.w)
-print("f_ij: ")
-print(tmp.f)
-print("x_ik: ")
-print(tmp.x_ik)
-print("Solution: ")
-print(sol.calculateObjectiveValue(tmp))
+
 
