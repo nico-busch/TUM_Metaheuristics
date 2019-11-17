@@ -178,9 +178,7 @@ class Solve:
     def solve_optimal(self):
 
         model = Model()
-
         model.Params.M = 100.0
-
 
         #Creation of decision variables
         x = {}
@@ -203,16 +201,12 @@ class Solve:
         for i in range(self.n):
             c[i] = model.addVar(lb=0.0, ub=null, vtype=GRB.CONTINUOUS, name=f'c[{i}]')
 
-
-
         #objective
         objective = LinExpr()
 
         objective = \
-                    quicksum(f[i, j]*w[k, l]*z[i, j, k, l] for i, j in range(self.n) for k, l in range(self.m)) \
-                    + quicksum(p[i]*(c[i]-a[i]) for i in range(self.n))
-
-
+                    quicksum(f[i, j]*self.w[k, l]*z[i, j, k, l] for i, j in range(self.n) for k, l in range(self.m)) \
+                    + quicksum(self.p[i]*(c[i] - self.a[i]) for i in range(self.n))
         #minimize objective function
         model.setObjective(objective, GRB.MINIMIZE)
 
@@ -223,7 +217,7 @@ class Solve:
             model.addConstr(quicksum(x[i, k] for k in range(self.m)), GBR.EQUAL, 1)
 
         #c2
-        for i, j in range(selff.n):
+        for i, j in range(self.n):
             for k, l in range(self.m):
                 model.addConstr(z[i, j, k, l] <= x[i, k])
 
@@ -232,15 +226,34 @@ class Solve:
             for k, l in range(self.m):
                 model.addConstr(z[i, j, k, l] <= x[j, l])
 
+        #c4
+        for i, j in range(self.n):
+            for k, l in range(self.m):
+                model.addConstr(x[i,  k] + x[j, l] - 1 <= z[i, j, k, l])
+        #c5
+        for i in range(self.n):
+            model.addConstr(c[i] >= self.a[i])
+        #c6
+        for i in range(self.n):
+            model.addConstr(c[i] <= self.b[i] - self.d[i])
 
+        #c7 - BIG M 1
+        for i, j in range(self.n):
+            model.addConstr((self.c[i] + self.d[i]) + self.c[j] - y[i, j]*model.M, GBR.GREATER, 0)
 
+        #c8 - BIG M 2
+        for i, j in range(self.n):
+            model.addConstr((self.c[i] + self.d[i]) - self.c[j] - (1 - y[i, j])*model.M <= 0)
 
+        #c9
+        for k in range(self.m):
+            if i != j:
+                model.addConstr(y[i, j] + y[j, i] >= z[i, j, k, l])
 
         model.update()
         model.optimize()
 
         return model.objVal
-
 
     # todo Oli
     def calculate_objective_value(self, Problem):
