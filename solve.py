@@ -225,75 +225,75 @@ class Solve:
     def solve_optimal(self):
 
         model = Model()
-        model.Params.M = 100.0
+        model.Params.M = self.prob.b_i
 
         #Creation of decision variables
         x = {}
-        for i in range(self.n):
-            for k in range(self.m):
+        for i in range(self.prob.n):
+            for k in range(self.prob.m):
                 if i != k:
                     x[i, k] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'x[{i},{k}]')
 
         y = {}
-        for i, j in range(self.n):
+        for i, j in range(self.prob.n):
             if i != j:
                 y[i, j] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'y[{i},{j}]')
 
         z = {}
-        for i, j in range(self.n):
-            for k, l in range(self.m):
+        for i, j in range(self.prob.n):
+            for k, l in range(self.prob.m):
                 z[i, j, k, l] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'z[{i},{j},{k},{l}]')
 
         c = {}
-        for i in range(self.n):
+        for i in range(self.prob.n):
             c[i] = model.addVar(lb=0.0, ub=null, vtype=GRB.CONTINUOUS, name=f'c[{i}]')
 
         #objective
         objective = LinExpr()
 
         objective = \
-                    quicksum(f[i, j]*self.w[k, l]*z[i, j, k, l] for i, j in range(self.n) for k, l in range(self.m)) \
-                    + quicksum(self.p[i]*(c[i] - self.a[i]) for i in range(self.n))
+                    quicksum(self.prob.f[i, j]*self.prob.w[k, l]*z[i, j, k, l] for i, j in range(self.prob.n) for k, l in range(self.prob.m)) \
+                    + quicksum(self.prob.p[i]*(self.prob.c[i] - self.prob.a[i]) for i in range(self.prob.n))
         #minimize objective function
         model.setObjective(objective, GRB.MINIMIZE)
 
         #constraints
 
         #c1
-        for i in range(self.n):
-            model.addConstr(quicksum(x[i, k] for k in range(self.m)), GBR.EQUAL, 1)
+        for i in range(self.prob.n):
+            model.addConstr(quicksum(x[i, k] for k in range(self.prob.m)), GBR.EQUAL, 1)
 
         #c2
-        for i, j in range(self.n):
-            for k, l in range(self.m):
+        for i, j in range(self.prob.n):
+            for k, l in range(self.prob.m):
                 model.addConstr(z[i, j, k, l] <= x[i, k])
 
         #c3
-        for i, j in range(self.n):
-            for k, l in range(self.m):
+        for i, j in range(self.prob.n):
+            for k, l in range(self.prob.m):
                 model.addConstr(z[i, j, k, l] <= x[j, l])
 
         #c4
-        for i, j in range(self.n):
-            for k, l in range(self.m):
+        for i, j in range(self.prob.n):
+            for k, l in range(self.prob.m):
                 model.addConstr(x[i,  k] + x[j, l] - 1 <= z[i, j, k, l])
         #c5
-        for i in range(self.n):
-            model.addConstr(c[i] >= self.a[i])
+        for i in range(self.prob.n):
+            model.addConstr(self.prob.c[i] >= self.prob.a[i])
         #c6
-        for i in range(self.n):
-            model.addConstr(c[i] <= self.b[i] - self.d[i])
+        for i in range(self.prob.n):
+            model.addConstr(c[i] <= self.prob.b[i] - self.prob.d[i])
 
         #c7 - BIG M 1
-        for i, j in range(self.n):
-            model.addConstr((self.c[i] + self.d[i]) + self.c[j] - y[i, j]*model.M, GBR.GREATER, 0)
+        for i, j in range(self.prob.n):
+            model.addConstr((self.prob.c[i] + self.prob.d[i]) + self.prob.c[j] - y[i, j]*model.M, GBR.GREATER, 0)
 
         #c8 - BIG M 2
-        for i, j in range(self.n):
-            model.addConstr((self.c[i] + self.d[i]) - self.c[j] - (1 - y[i, j])*model.M <= 0)
+        for i, j in range(self.prob.n):
+            model.addConstr((self.prob.c[i] + self.prob.d[i]) - self.prob.c[j] - (1 - y[i, j])*model.M <= 0)
 
         #c9
-        for k in range(self.m):
+        for k in range(self.prob.m):
             if i != j:
                 model.addConstr(y[i, j] + y[j, i] >= z[i, j, k, l])
 
