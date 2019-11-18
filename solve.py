@@ -1,7 +1,7 @@
 import timeit
 import numpy as np
 import pandas as pd
-# from gurobipy import *
+#from gurobipy import *
 import math
 from problem import Problem
 
@@ -14,10 +14,13 @@ class Solve:
         self.prob = prob
         self.c_i = pd.DataFrame()
         self.x_ik = pd.DataFrame()
+        # self.y_ij = pd.DataFrame()
+        # self.z_ijkl = pd.DataFrame()
 
         self.create_initial_solution()
 
     # creates a feasible initial solution
+    # TODO bug fixen. Manchmal wird c als 0 gesetzt
     def create_initial_solution(self):
         # creates dataframes filled with zeros
         self.x_ik = pd.DataFrame(data={'x': 0},
@@ -50,6 +53,51 @@ class Solve:
                     if count > 1000:
                         return False
         return True
+    """ Bis jetzt erst ein Ansatz. Funktioniert noch nicht immer. (OLI)
+    def create_initial_solution_alternative(self):
+        # creates dataframes filled with zeros
+        self.x_ik = pd.DataFrame(data={'x': 0},
+                                 index=pd.MultiIndex.from_product([self.prob.i, self.prob.k],
+                                                                  names=['i', 'k']))
+        self.c_i = pd.DataFrame(data={'c': 0, 'i': self.prob.i}).set_index('i')
+
+        temp = self.prob.a_i.sort_values(by=['a'])
+        k = 0
+        start = 0
+        prevIdx = np.empty([self.prob.m])
+        currIdx = np.empty([self.prob.m])
+        for idx, row in temp.iterrows():
+
+            print(idx)
+            print(self.x_ik)
+            start += 1
+            k += 1
+
+            if(k > self.prob.m):
+                k = 1
+                prevIdx = np.copy(currIdx)
+                currIdx = np.empty([self.prob.m])
+                print(prevIdx)
+                print(currIdx)
+
+            if(start <= self.prob.m):
+                self.c_i.loc[idx,'c'] = self.prob.a_i.loc[idx,'a']
+                self.x_ik.loc[(idx,k),'x'] = 1
+                currIdx[k-1] = idx
+            elif(self.prob.b_i.loc[idx,'b']-self.prob.d_i.loc[idx,'d']
+                 >= self.c_i.loc[prevIdx[k-1],'c']+self.prob.d_i.loc[prevIdx[k-1],'d']):
+                currIdx[k-1]=idx
+                self.x_ik.loc[(idx,k),'x'] = 1
+                if(temp.loc[idx,'a'] >= self.c_i.loc[prevIdx[k-1], 'c']+self.prob.d_i.loc[prevIdx[k-1],'d']):
+                    self.c_i.loc[idx,'c']=temp.loc[idx,'a']
+                else:
+                    self.c_i.loc[idx, 'c'] = self.c_i.loc[prevIdx[k-1], 'c']+self.prob.d_i.loc[prevIdx[k-1],'d']
+            else:
+                if(start <= self.prob.n):
+                    print("Feasibility Error: initial data will be newly created")
+                    self.prob = Problem(self.prob.n,self.prob.m)
+                    self.create_initial_solution_alternative()
+        """
 
     # returns the complete current schedule
     def get_schedule(self):

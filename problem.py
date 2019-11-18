@@ -35,7 +35,7 @@ class Problem:
         p = np.empty([self.n])
         f = np.empty([self.n, self.n])
         # parameter
-        des = 0.7
+        des = 0.8
         # setting of random values
         for i in range(self.n):
             a[i] = np.random.uniform(1, self.n * 70 / self.m)
