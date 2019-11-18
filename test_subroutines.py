@@ -1,7 +1,3 @@
-import numpy as np
-import pandas as pd
-import itertools
-
 from problem import Problem
 from solve import Solve
 
@@ -10,13 +6,13 @@ prob = Problem(50, 10)
 # create solve object
 sol = Solve(prob)
 
-# find two flights assigned to one gate
+# # find two flights assigned to one gate
 temp = sol.x_ik.loc[sol.x_ik['x'] == 1].iloc[15].name
 f1 = temp[0]
 f2 = sol.get_gate_schedule(temp[1]).iloc[sol.get_gate_schedule(temp[1]).index.get_loc(f1) + 1].name
 g = temp[1]
 
-# test subroutine
+# # test subroutine
 print(sol.get_gate_schedule(temp[1]))
 
 t = sol.attempt_shift_right(f1, g)

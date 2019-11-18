@@ -1,6 +1,7 @@
+import timeit
 import numpy as np
 import pandas as pd
-#from gurobipy import *
+# from gurobipy import *
 import math
 from problem import Problem
 
@@ -13,8 +14,6 @@ class Solve:
         self.prob = prob
         self.c_i = pd.DataFrame()
         self.x_ik = pd.DataFrame()
-        # self.y_ij = pd.DataFrame()
-        # self.z_ijkl = pd.DataFrame()
 
         self.create_initial_solution()
 
@@ -181,7 +180,7 @@ class Solve:
         model = Model()
         model.Params.M = 100.0
 
-        #Creation of decision variables
+        # Creation of decision variables
         x = {}
         for i in range(self.n):
             for k in range(self.m):
@@ -202,51 +201,51 @@ class Solve:
         for i in range(self.n):
             c[i] = model.addVar(lb=0.0, ub=null, vtype=GRB.CONTINUOUS, name=f'c[{i}]')
 
-        #objective
+        # objective
         objective = LinExpr()
 
         objective = \
-                    quicksum(f[i, j]*self.w[k, l]*z[i, j, k, l] for i, j in range(self.n) for k, l in range(self.m)) \
-                    + quicksum(self.p[i]*(c[i] - self.a[i]) for i in range(self.n))
-        #minimize objective function
+            quicksum(f[i, j] * self.w[k, l] * z[i, j, k, l] for i, j in range(self.n) for k, l in range(self.m)) \
+            + quicksum(self.p[i] * (c[i] - self.a[i]) for i in range(self.n))
+        # minimize objective function
         model.setObjective(objective, GRB.MINIMIZE)
 
-        #constraints
+        # constraints
 
-        #c1
+        # c1
         for i in range(self.n):
             model.addConstr(quicksum(x[i, k] for k in range(self.m)), GBR.EQUAL, 1)
 
-        #c2
+        # c2
         for i, j in range(self.n):
             for k, l in range(self.m):
                 model.addConstr(z[i, j, k, l] <= x[i, k])
 
-        #c3
+        # c3
         for i, j in range(self.n):
             for k, l in range(self.m):
                 model.addConstr(z[i, j, k, l] <= x[j, l])
 
-        #c4
+        # c4
         for i, j in range(self.n):
             for k, l in range(self.m):
-                model.addConstr(x[i,  k] + x[j, l] - 1 <= z[i, j, k, l])
-        #c5
+                model.addConstr(x[i, k] + x[j, l] - 1 <= z[i, j, k, l])
+        # c5
         for i in range(self.n):
             model.addConstr(c[i] >= self.a[i])
-        #c6
+        # c6
         for i in range(self.n):
             model.addConstr(c[i] <= self.b[i] - self.d[i])
 
-        #c7 - BIG M 1
+        # c7 - BIG M 1
         for i, j in range(self.n):
-            model.addConstr((self.c[i] + self.d[i]) + self.c[j] - y[i, j]*model.M, GBR.GREATER, 0)
+            model.addConstr((self.c[i] + self.d[i]) + self.c[j] - y[i, j] * model.M, GBR.GREATER, 0)
 
-        #c8 - BIG M 2
+        # c8 - BIG M 2
         for i, j in range(self.n):
-            model.addConstr((self.c[i] + self.d[i]) - self.c[j] - (1 - y[i, j])*model.M <= 0)
+            model.addConstr((self.c[i] + self.d[i]) - self.c[j] - (1 - y[i, j]) * model.M <= 0)
 
-        #c9
+        # c9
         for k in range(self.m):
             if i != j:
                 model.addConstr(y[i, j] + y[j, i] >= z[i, j, k, l])
@@ -256,20 +255,31 @@ class Solve:
 
         return model.objVal
 
-    # todo Oli
-    def calculate_objective_value(self):
-        sumDelayPenalty = 0
+    def calculate_objective_value_old(self):
+        sum_delay_penalty = 0
         df_temp = pd.DataFrame()
-        df_temp = pd.concat([self.c_i,self.prob.a_i, self.prob.p_i], axis=1)
+        df_temp = pd.concat([self.c_i, self.prob.a_i, self.prob.p_i], axis=1)
         for index, row in df_temp.iterrows():
-            sumDelayPenalty += row['p']*(row['c']-row['a'])
-        sumWalkingDistance = 0
+            sum_delay_penalty += row['p'] * (row['c'] - row['a'])
+        sum_walking_distance = 0
         for idx1, row1 in self.x_ik.iterrows():
             for idx2, row2 in self.x_ik.iterrows():
-                if(idx1[0] != idx2[0] and idx1[1] != idx2[1]):
-                    w_tmp = self.prob.w_kl.loc[(idx1[1],idx2[1]), 'w']
-                    f_tmp = self.prob.f_ij.loc[(idx1[0], idx2[0]),'f']
-                    x_mul = self.x_ik.loc[idx1,'x']*self.x_ik.loc[idx2,'x']
-                    sumWalkingDistance += w_tmp*f_tmp*x_mul
-        self.objective_value = sumWalkingDistance + sumDelayPenalty
-        return self.objective_value
+                if (idx1[0] != idx2[0] and idx1[1] != idx2[1]):
+                    w_tmp = self.prob.w_kl.loc[(idx1[1], idx2[1]), 'w']
+                    f_tmp = self.prob.f_ij.loc[(idx1[0], idx2[0]), 'f']
+                    x_mul = self.x_ik.loc[idx1, 'x'] * self.x_ik.loc[idx2, 'x']
+                    sum_walking_distance += w_tmp * f_tmp * x_mul
+        return sum_delay_penalty + sum_walking_distance
+
+    def calculate_objective_value(self):
+
+        sum_delay_penalty = np.sum(self.prob.p_i.to_numpy()
+                                   * (self.c_i.to_numpy()
+                                      - self.prob.a_i.to_numpy()))
+
+        sum_walking_distance = np.sum(self.x_ik.to_numpy().reshape(self.prob.n, 1, self.prob.m, 1)
+                                      * self.x_ik.to_numpy().reshape(1, self.prob.n, 1, self.prob.m)
+                                      * self.prob.f_ij.to_numpy().reshape(self.prob.n, self.prob.n, 1, 1)
+                                      * self.prob.w_kl.to_numpy().reshape(1, 1, self.prob.m, self.prob.m))
+
+        return sum_delay_penalty + sum_walking_distance
