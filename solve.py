@@ -1,3 +1,4 @@
+import timeit
 import numpy as np
 import pandas as pd
 #from gurobipy import *
@@ -302,19 +303,31 @@ class Solve:
 
         return model.objVal
 
-    def calculate_objective_value(self):
-        sumDelayPenalty = 0
+    def calculate_objective_value_old(self):
+        sum_delay_penalty = 0
         df_temp = pd.DataFrame()
-        df_temp = pd.concat([self.c_i,self.prob.a_i, self.prob.p_i], axis=1)
+        df_temp = pd.concat([self.c_i, self.prob.a_i, self.prob.p_i], axis=1)
         for index, row in df_temp.iterrows():
-            sumDelayPenalty += row['p']*(row['c']-row['a'])
-        sumWalkingDistance = 0
+            sum_delay_penalty += row['p'] * (row['c'] - row['a'])
+        sum_walking_distance = 0
         for idx1, row1 in self.x_ik.iterrows():
             for idx2, row2 in self.x_ik.iterrows():
-                if(idx1[0] != idx2[0] and idx1[1] != idx2[1]):
-                    w_tmp = self.prob.w_kl.loc[(idx1[1],idx2[1]), 'w']
-                    f_tmp = self.prob.f_ij.loc[(idx1[0], idx2[0]),'f']
-                    x_mul = self.x_ik.loc[idx1,'x']*self.x_ik.loc[idx2,'x']
-                    sumWalkingDistance += w_tmp*f_tmp*x_mul
-        self.objective_value = sumWalkingDistance + sumDelayPenalty
-        return self.objective_value
+                if (idx1[0] != idx2[0] and idx1[1] != idx2[1]):
+                    w_tmp = self.prob.w_kl.loc[(idx1[1], idx2[1]), 'w']
+                    f_tmp = self.prob.f_ij.loc[(idx1[0], idx2[0]), 'f']
+                    x_mul = self.x_ik.loc[idx1, 'x'] * self.x_ik.loc[idx2, 'x']
+                    sum_walking_distance += w_tmp * f_tmp * x_mul
+        return sum_delay_penalty + sum_walking_distance
+
+    def calculate_objective_value(self):
+
+        sum_delay_penalty = np.sum(self.prob.p_i.to_numpy()
+                                   * (self.c_i.to_numpy()
+                                      - self.prob.a_i.to_numpy()))
+
+        sum_walking_distance = np.sum(self.x_ik.to_numpy().reshape(self.prob.n, 1, self.prob.m, 1)
+                                      * self.x_ik.to_numpy().reshape(1, self.prob.n, 1, self.prob.m)
+                                      * self.prob.f_ij.to_numpy().reshape(self.prob.n, self.prob.n, 1, 1)
+                                      * self.prob.w_kl.to_numpy().reshape(1, 1, self.prob.m, self.prob.m))
+
+        return sum_delay_penalty + sum_walking_distance
