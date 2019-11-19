@@ -1,7 +1,7 @@
 import timeit
 import numpy as np
 import pandas as pd
-#from gurobipy import *
+from gurobipy import *
 import math
 from problem import Problem
 
@@ -53,6 +53,7 @@ class Solve:
                     if count > 1000:
                         return False
         return True
+
     """ Bis jetzt erst ein Ansatz. Funktioniert noch nicht immer. (OLI)
     def create_initial_solution_alternative(self):
         # creates dataframes filled with zeros
@@ -223,85 +224,7 @@ class Solve:
         return 'hello world'
 
     # todo Dani
-    def solve_optimal(self):
 
-        model = Model()
-        model.Params.M = self.prob.b_i
-
-        #Creation of decision variables
-        x = {}
-        for i in range(self.prob.n):
-            for k in range(self.prob.m):
-                if i != k:
-                    x[i, k] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'x[{i},{k}]')
-
-        y = {}
-        for i, j in range(self.prob.n):
-            if i != j:
-                y[i, j] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'y[{i},{j}]')
-
-        z = {}
-        for i, j in range(self.prob.n):
-            for k, l in range(self.prob.m):
-                z[i, j, k, l] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'z[{i},{j},{k},{l}]')
-
-        c = {}
-        for i in range(self.prob.n):
-            c[i] = model.addVar(lb=0.0, ub=null, vtype=GRB.CONTINUOUS, name=f'c[{i}]')
-
-        #objective
-        objective = LinExpr()
-
-        objective = \
-                    quicksum(self.prob.f[i, j]*self.prob.w[k, l]*z[i, j, k, l] for i, j in range(self.prob.n) for k, l in range(self.prob.m)) \
-                    + quicksum(self.prob.p[i]*(self.prob.c[i] - self.prob.a[i]) for i in range(self.prob.n))
-        #minimize objective function
-        model.setObjective(objective, GRB.MINIMIZE)
-
-        #constraints
-
-        #c1
-        for i in range(self.prob.n):
-            model.addConstr(quicksum(x[i, k] for k in range(self.prob.m)), GBR.EQUAL, 1)
-
-        #c2
-        for i, j in range(self.prob.n):
-            for k, l in range(self.prob.m):
-                model.addConstr(z[i, j, k, l] <= x[i, k])
-
-        #c3
-        for i, j in range(self.prob.n):
-            for k, l in range(self.prob.m):
-                model.addConstr(z[i, j, k, l] <= x[j, l])
-
-        #c4
-        for i, j in range(self.prob.n):
-            for k, l in range(self.prob.m):
-                model.addConstr(x[i,  k] + x[j, l] - 1 <= z[i, j, k, l])
-        #c5
-        for i in range(self.prob.n):
-            model.addConstr(self.prob.c[i] >= self.prob.a[i])
-        #c6
-        for i in range(self.prob.n):
-            model.addConstr(c[i] <= self.prob.b[i] - self.prob.d[i])
-
-        #c7 - BIG M 1
-        for i, j in range(self.prob.n):
-            model.addConstr((self.prob.c[i] + self.prob.d[i]) + self.prob.c[j] - y[i, j]*model.M, GBR.GREATER, 0)
-
-        #c8 - BIG M 2
-        for i, j in range(self.prob.n):
-            model.addConstr((self.prob.c[i] + self.prob.d[i]) - self.prob.c[j] - (1 - y[i, j])*model.M <= 0)
-
-        #c9
-        for k in range(self.prob.m):
-            if i != j:
-                model.addConstr(y[i, j] + y[j, i] >= z[i, j, k, l])
-
-        model.update()
-        model.optimize()
-
-        return model.objVal
 
     def calculate_objective_value_old(self):
         sum_delay_penalty = 0
