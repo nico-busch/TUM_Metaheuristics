@@ -1,10 +1,10 @@
 from problem import Problem
-from solve import Solve
+from tabusearch import TabuSearch
 
 # create problem object
 prob = Problem(50, 10)
 # create solve object
-sol = Solve(prob)
+sol = TabuSearch(prob)
 
 # # find two flights assigned to one gate
 temp = sol.x_ik.loc[sol.x_ik['x'] == 1].iloc[15].name

@@ -7,15 +7,13 @@ from problem import Problem
 
 
 # this class can solve objects of class Problem
-class Solve:
+class TabuSearch:
 
     def __init__(self, prob):
 
         self.prob = prob
         self.c_i = pd.DataFrame()
         self.x_ik = pd.DataFrame()
-        # self.y_ij = pd.DataFrame()
-        # self.z_ijkl = pd.DataFrame()
 
         self.create_initial_solution()
 
@@ -210,37 +208,6 @@ class Solve:
     # todo
     def insert(self):
         return 'hello world'
-
-    # todo Oli
-    def tabu_search(self):
-        return 'hello world'
-
-    # todo Nico
-    def genetic_algorithm(self):
-        return 'hello world'
-
-    # todo ?
-    def memetic_algorithm(self):
-        return 'hello world'
-
-    # todo Dani
-
-
-    def calculate_objective_value_old(self):
-        sum_delay_penalty = 0
-        df_temp = pd.DataFrame()
-        df_temp = pd.concat([self.c_i, self.prob.a_i, self.prob.p_i], axis=1)
-        for index, row in df_temp.iterrows():
-            sum_delay_penalty += row['p'] * (row['c'] - row['a'])
-        sum_walking_distance = 0
-        for idx1, row1 in self.x_ik.iterrows():
-            for idx2, row2 in self.x_ik.iterrows():
-                if (idx1[0] != idx2[0] and idx1[1] != idx2[1]):
-                    w_tmp = self.prob.w_kl.loc[(idx1[1], idx2[1]), 'w']
-                    f_tmp = self.prob.f_ij.loc[(idx1[0], idx2[0]), 'f']
-                    x_mul = self.x_ik.loc[idx1, 'x'] * self.x_ik.loc[idx2, 'x']
-                    sum_walking_distance += w_tmp * f_tmp * x_mul
-        return sum_delay_penalty + sum_walking_distance
 
     def calculate_objective_value(self):
 

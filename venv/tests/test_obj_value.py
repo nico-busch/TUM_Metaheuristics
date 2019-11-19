@@ -1,12 +1,12 @@
 import timeit
 
 from problem import Problem
-from solve import Solve
+from tabusearch import TabuSearch
 
 # create problem object
 prob = Problem(20, 5)
 # create solve object
-sol = Solve(prob)
+sol = TabuSearch(prob)
 
 
 start_time = timeit.default_timer()

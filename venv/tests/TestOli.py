@@ -1,11 +1,11 @@
 from problem import Problem
 import numpy as np
 import pandas as pd
-from solve import Solve
+from tabusearch import TabuSearch
 import tabu_search
 
 tmp = Problem(4,2)
-tmp_sol = Solve(tmp)
+tmp_sol = TabuSearch(tmp)
 df_temp = pd.DataFrame()
 df_temp = pd.concat([tmp.a_i,tmp.b_i, tmp.d_i, tmp_sol.c_i], axis=1)
 print(df_temp)

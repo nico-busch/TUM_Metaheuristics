@@ -2,12 +2,12 @@ from problem import Problem
 import numpy as np
 import pandas as pd
 import random
-from solve import Solve
+from tabusearch import TabuSearch
 
 
 def tabu_search(s):
     start = pd.DataFrame()
-    start = Solve.x_ik
+    start = TabuSearch.x_ik
     max_num_iter = 10**6
     neigh = 100
     tabu_tenure = 10
