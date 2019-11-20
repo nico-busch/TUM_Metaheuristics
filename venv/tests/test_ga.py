@@ -5,11 +5,10 @@ from geneticalgorithm import GeneticAlgorithm
 
 # create problem object
 
-prob = Problem(12, 3)
+prob = Problem(50, 10)
 # create solve object
 
 start_time = timeit.default_timer()
-sol = GeneticAlgorithm(prob)
-sol.solve()
-#sol.generate_solution(1)
+ga = GeneticAlgorithm(prob)
+ga.solve()
 print("time: ", (timeit.default_timer() - start_time))

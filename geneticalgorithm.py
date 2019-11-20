@@ -3,50 +3,34 @@ import timeit
 import numpy as np
 import pandas as pd
 
+import random
+
 
 class GeneticAlgorithm:
 
-    def __init__(self, prob, pop_n=None, crossover_n=None, iter_n=None, p1=None):
+    def __init__(self, prob, pop_n=None, crossover_n=None, iter_n=None, p1=None, term=None):
 
         self.prob = prob
-        self.pop_n = pop_n or 100
+        self.pop_n = pop_n or 3
         self.crossover_n = crossover_n or 10
         self.iter_n = iter_n or 100
-        self.p1 = p1 or .2
-        self.s_i = np.empty([self.prob.n])
-        self.pop = np.empty([self.pop_n, self.prob.n])
-
-    def one_point_crossover(self, par1, par2):
-
-        cross = np.random.randint(0, self.prob.n)
-        off1 = np.concatenate([self.pop[par1][:cross], self.pop[par2][cross:]])
-        off2 = np.concatenate([self.pop[par2][:cross], self.pop[par1][cross:]])
-        return off1, off2
-
-    def two_point_crossover(self, par1, par2):
-
-        cross1 = np.random.randint(0, self.prob.n)
-        cross2 = np.random.randint(0, self.prob.n)
-        off1 = np.concatenate([self.pop[par1][:cross1], self.pop[par2][cross1:cross2], self.pop[par1][cross2:]])
-        off2 = np.concatenate([self.pop[par2][:cross1], self.pop[par1][cross1:cross2], self.pop[par2][cross2:]])
-        return off1, off2
-
-    def mutation(self, indv):
-        switch1 = np.random.randint(0, self.prob.n)
-        switch2 = np.random.randint(0, self.prob.n)
-        mut = np.copy(indv)
-        mut[switch1], mut[switch2] = indv[switch2], indv[switch1]
-        return mut
+        self.p1 = p1 or 0.2
+        self.term = term or 10
+        self.pop = {}
+        self.obj = {}
+        self.best = None
 
     def solve(self):
 
         self.create_initial_population()
+        n = self.pop_n
+        z = 0
 
         for x in range(self.iter_n):
             for y in range(self.crossover_n):
 
-                par1 = np.random.randint(0, self.pop.shape[0])
-                par2 = np.random.randint(0, self.pop.shape[0])
+                par1 = random.choice(list(self.pop.values()))
+                par2 = random.choice(list(self.pop.values()))
 
                 off1, off2 = self.one_point_crossover(par1, par2)
 
@@ -55,12 +39,47 @@ class GeneticAlgorithm:
                 if np.random.rand() <= self.p1:
                     off2 = self.mutation(off2)
 
-                sol1 = self.generate_solution(off1)
+                off1, obj1 = self.generate_solution(off1)
+                if obj1 is not None:
+                    self.pop[n] = off1
+                    self.obj[n] = obj1
+                    n += 1
 
+                off2, obj2 = self.generate_solution(off2)
+                if obj2 is not None:
+                    self.pop[n] = off2
+                    self.obj[n] = obj2
+                    n += 1
+
+            top = [key for key in sorted(self.obj, key=self.obj.get)[:self.pop_n]]
+            self.pop = {key: self.pop[key] for key in top}
+            print(self.pop)
+            if x == 0:
+                self.best = min(self.obj.values())
+            elif min(self.obj.values()) < self.best:
+                self.best = min(self.obj.values())
+            elif z <= self.term:
+                z += 1
+            else:
+                break
+
+        return self.best
 
     def create_initial_population(self):
 
-        self.pop = np.random.randint(1, self.prob.m + 1, (self.pop_n, self.prob.n))
+        for n in range(self.pop_n):
+
+            indv = None
+            obj = None
+
+            print(n)
+
+            while obj is None:
+                indv = np.random.randint(1, self.prob.m + 1, self.prob.n)
+                indv, obj = self.generate_solution(indv)
+
+            self.pop[n] = indv
+            self.obj[n] = obj
 
     def generate_solution(self, indv):
 
@@ -70,6 +89,7 @@ class GeneticAlgorithm:
 
             g = k
             x = 0
+            successful = False
 
             while x < self.prob.m:
 
@@ -78,6 +98,8 @@ class GeneticAlgorithm:
                 if sched.empty:
                     sol.c_i.loc[i] = self.prob.a_i.loc[i, 'a']
                     sol.x_ik.loc[(i, g)] = 1
+                    indv[i - 1] = g
+                    successful = True
                     break
 
                 space = self.prob.b_i.loc[i, 'b'] - self.prob.a_i.loc[i, 'a'] \
@@ -90,12 +112,39 @@ class GeneticAlgorithm:
                         .where(sched['c'] < self.prob.a_i.loc[i, 'a'], self.prob.a_i.loc[i, 'a']).max()
 
                     sol.x_ik.loc[(i, g)] = 1
+                    indv[i - 1] = g
+                    successful = True
                     break
 
                 g = g % self.prob.m + 1
                 x += 1
 
-        return sol
+            if not successful:
+                return indv, None
+
+        return indv, sol.calculate_objective_value()
+
+    def one_point_crossover(self, par1, par2):
+
+        cross = np.random.randint(0, self.prob.n)
+        off1 = np.concatenate([par1[:cross], par2[cross:]])
+        off2 = np.concatenate([par2[:cross], par1[cross:]])
+        return off1, off2
+
+    def two_point_crossover(self, par1, par2):
+
+        cross1 = np.random.randint(0, self.prob.n)
+        cross2 = np.random.randint(0, self.prob.n)
+        off1 = np.concatenate([par1[:cross1], par2[cross1:cross2], par1[cross2:]])
+        off2 = np.concatenate([par2[:cross1], par1[cross1:cross2], par2[cross2:]])
+        return off1, off2
+
+    def mutation(self, indv):
+        switch1 = np.random.randint(0, self.prob.n)
+        switch2 = np.random.randint(0, self.prob.n)
+        mut = np.copy(indv)
+        mut[switch1], mut[switch2] = indv[switch2], indv[switch1]
+        return mut
 
 
 class Solution:
@@ -136,7 +185,3 @@ class Solution:
             pd.concat([self.prob.a_i, self.prob.b_i, self.prob.d_i, self.c_i], axis=1), how='inner').sort_values(
             by=['k', 'c']).drop(['x'], axis=1).reset_index(level=1, drop=True)
         return sched
-
-
-
-
