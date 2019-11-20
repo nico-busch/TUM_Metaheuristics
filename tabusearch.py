@@ -1,9 +1,5 @@
-import timeit
 import numpy as np
 import pandas as pd
-from gurobipy import *
-import math
-from problem import Problem
 
 
 # this class can solve objects of class Problem
