@@ -23,8 +23,7 @@ class Gurobi:
         y_ij = {}
         for i in self.prob.i:
             for j in self.prob.i:
-                if i != j:
-                    y_ij[i, j] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'y_i[{i},{j}]')
+                y_ij[i, j] = model.addVar(lb=0.0, ub=1.0, vtype=GRB.BINARY, name=f'y_i[{i},{j}]')
 
         z_ijkl = {}
         for i in self.prob.i:
@@ -36,7 +35,9 @@ class Gurobi:
 
         c_i = {}
         for i in self.prob.i:
-            c_i[i] = model.addVar(lb=0.0, vtype=GRB.CONTINUOUS, name=f'c_i[{i}]')
+            c_i[i] = model.addVar(lb=0.000001, vtype=GRB.CONTINUOUS, name=f'c_i[{i}]')
+
+        model.update()
 
         # objective
         objective = LinExpr()
@@ -85,14 +86,14 @@ class Gurobi:
         # c7 - BIG M 1
         for i in self.prob.i:
             for j in self.prob.i:
-                if i != j:
-                    model.addConstr((c_i[i] + self.prob.d_i.loc[i, 'd']) + c_i[j] - y_ij[i, j] * self.M >= 0)
+                #if i != j:
+                model.addConstr((c_i[i] + self.prob.d_i.loc[i, 'd']) - c_i[j] + y_ij[i, j] * self.M >= 0)
 
         # c8 - BIG M 2
         for i in self.prob.i:
             for j in self.prob.i:
-                if i != j:
-                    model.addConstr((c_i[i] + self.prob.d_i.loc[i, 'd']) - c_i[j] - (1 - y_ij[i, j]) * self.M <= 0)
+                #if i != j:
+                model.addConstr((c_i[i] + self.prob.d_i.loc[i, 'd']) - c_i[j] - (1 - y_ij[i, j]) * self.M <= 0)
 
         # c9
         for k in self.prob.k:
@@ -103,3 +104,5 @@ class Gurobi:
 
         model.update()
         model.optimize()
+
+        #model.computeIIS()
