@@ -12,10 +12,12 @@ class Problem:
 
         self.n = n
         self.m = m
+
+        # index ranges
         self.i = range(1, n + 1)
         self.k = range(1, m + 1)
 
-        # initialize input dataframes
+        # input dataframes
         self.a_i = pd.DataFrame()
         self.b_i = pd.DataFrame()
         self.d_i = pd.DataFrame()
@@ -28,28 +30,18 @@ class Problem:
 
     # creates data with regards to the number of flights n and number of gates m
     def create_data(self):
-        # empty numpy arrays
-        a = np.empty([self.n])
-        b = np.empty([self.n])
-        d = np.empty([self.n])
-        p = np.empty([self.n])
-        f = np.empty([self.n, self.n])
         # parameter
         des = 0.7
+
         # setting of random values
-        for i in range(self.n):
-            a[i] = np.random.uniform(1, self.n * 70 / self.m)
-            b[i] = a[i] + np.random.uniform(45, 74)
-            d[i] = des * (b[i] - a[i])
-            p[i] = np.random.uniform(10, 14)
-            for j in range(self.n):
-                if a[i] < a[j]:
-                    f[i][j] = np.random.random_integers(6, 60)
-                else:
-                    f[i][j] = 0
+        a = np.random.uniform(1, self.n * 70 / self.m, self.n)
+        b = a + np.random.uniform(45, 74)
+        d = des * (b - a)
+        p = np.random.uniform(10, 14, self.n)
+        f = np.where(a.reshape(self.n, 1) < a, np.random.randint(6, 60, [self.n, self.n]), 0)
+
         # gate distances
         w = self.create_distance_matrix()
-        # print(self.a_i) # Todo delete if not necessary anymore
 
         # create dataframes
         self.a_i = pd.DataFrame(data={'a': a, 'i': self.i}).set_index('i')

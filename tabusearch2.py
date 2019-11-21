@@ -44,7 +44,7 @@ def tabu_search(s):
     #todo OLI: apply function on all rows of N (lambda)
     #todo OLI: select best value
 
-    # 3. test if termination condition applies
+    # 3. tests if termination condition applies
     return "d"
 
 # todo OLI: make more efficient if possible
