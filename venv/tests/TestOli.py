@@ -2,13 +2,16 @@ from problem import Problem
 import numpy as np
 import pandas as pd
 from tabusearch import TabuSearch
-import tabu_search
+import tabusearch
 
-tmp = Problem(4,2)
-tmp_sol = TabuSearch(tmp)
-df_temp = pd.DataFrame()
-df_temp = pd.concat([tmp.a_i,tmp.b_i, tmp.d_i, tmp_sol.c_i], axis=1)
-print(df_temp)
-print(tmp_sol.calculate_objective_value())
-print("tabu_search")
-print(tabu_search.create_A(tmp_sol.x_ik, tmp_sol))
+# test
+test_prob = Problem(6,2)
+test_sol = TabuSearch(test_prob)
+print("whole schedule: ")
+print(test_sol.get_schedule())
+suc = test_sol.insert()
+print("Successful: + " + str(suc))
+
+
+
+

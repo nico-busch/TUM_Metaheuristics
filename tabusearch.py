@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from problem import Problem
+import random
 
 
 # this class can solve objects of class Problem
@@ -13,8 +15,12 @@ class TabuSearch:
 
         self.create_initial_solution()
 
+        self.A = pd.DataFrame(data={'k': 0, 'i': self.prob.i}).set_index('i')
+        self.create_A()
+
     # creates a feasible initial solution
     # TODO bug fixen. Manchmal wird c als 0 gesetzt
+    # Todo Manchmal werden noch falsche Lösungen ausgegeben. z.B. nicht alle Flüge zu Gates zugewiesen
     def create_initial_solution(self):
         # creates dataframes filled with zeros
         self.x_ik = pd.DataFrame(data={'x': 0},
@@ -203,7 +209,82 @@ class TabuSearch:
 
     # todo
     def insert(self):
-        return 'hello world'
+        i = random.randint(1, self.prob.n)
+        k = random.randint(1, self.prob.m)
+        while k == self.A.loc[i,'k']:
+            k = random.randint(1, self.prob.m)
+
+        # print("flight i: " + str(i))
+        # print("gate k: " + str(k))
+
+        tmp = pd.DataFrame()
+        successor_i = pd.DataFrame()
+        precessor_i = pd.DataFrame()
+        tmp = self.get_gate_schedule(k)
+        tmp['end'] = tmp['c']+tmp['d']
+
+        # print("schedule: ")
+        # print(tmp)
+
+        # find the possible precessor of flight i at new gate k
+        starttime_i = self.prob.a_i.loc[i,'a']
+        precessor_i = tmp[tmp['end'] <= starttime_i]
+
+        #  print("precessors: ")
+        # print(precessor_i)
+
+        gap_start = precessor_i['end'].max()
+        if(pd.isnull(gap_start)):
+            gap_start = starttime_i
+
+        # print("Gap start: " + str(gap_start))
+
+        # find the possible successor of flight i at new gate k
+        gap_end = 0
+        successor_i = tmp[tmp['end'] > starttime_i]
+
+        # print("successors: ")
+        # print(successor_i)
+
+        successor_i = successor_i['c'].idxmin(axis=0)
+
+        # print("successor_i: " + str(successor_i))
+
+        if(pd.isnull(successor_i)):
+            gap_end = sys.maxsize
+        else:
+            gap_end = self.attempt_shift_right(successor_i,k)
+
+        # print("Gap End: " + str(gap_end))
+
+        # check if flight i fits into the gap
+        if(gap_end - gap_start >= self.prob.d_i.loc[i, 'd']):
+            # update new x
+            self.x_ik.loc[(i, self.A.loc[i, 'k']), 'x'] = 0
+            self.x_ik.loc[(i, k), 'x'] = 1
+            # update new c
+            self.c_i.loc[i, 'c'] = gap_start
+            if( gap_start < starttime_i):
+                self.c_i.loc[i, 'c'] = gap_start
+            # update all successors
+            self.shift_right(successor_i, k, gap_start+self.prob.d_i.loc[i,'d'])
+            if(pd.isnull(successor_i)==False):
+                self.shift_left(successor_i, k)
+
+            # print(self.get_gate_schedule(k))
+
+
+            return True
+        else:
+            return False
+
+    # todo OLI: make more efficient if possible
+    def create_A(self):
+        tmp = pd.DataFrame()
+        tmp = self.x_ik[self.x_ik['x'] == 1]
+        for idx, row in tmp.iterrows():
+            self.A.loc[(idx[0], 'k')] = idx[1]
+        return self.A
 
     def calculate_objective_value(self):
 

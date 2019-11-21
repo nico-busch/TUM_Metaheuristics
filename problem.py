@@ -79,4 +79,3 @@ class Problem:
                 else:
                     w[k][l] = math.sqrt(((kk - ll) * 0.5) ** 2)
         return w
-        # print(self.w_kl) Todo delete if not necessary anymore
