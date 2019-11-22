@@ -35,7 +35,7 @@ class Problem:
 
         # setting of random values
         a = np.random.uniform(1, self.n * 70 / self.m, self.n)
-        b = a + np.random.uniform(45, 74)
+        b = a + np.random.uniform(45, 74, self.n)
         d = des * (b - a)
         p = np.random.uniform(10, 14, self.n)
         f = np.where(a.reshape(self.n, 1) < a, np.random.randint(6, 60, [self.n, self.n]), 0)
