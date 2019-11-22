@@ -270,6 +270,8 @@ class TabuSearch:
             self.shift_right(successor_i, k, gap_start+self.prob.d_i.loc[i,'d'])
             if(pd.isnull(successor_i)==False):
                 self.shift_left(successor_i, k)
+            # update A
+            self.create_A()
 
             # print(self.get_gate_schedule(k))
 
@@ -277,6 +279,39 @@ class TabuSearch:
             return True
         else:
             return False
+
+    def interval_exchange(self):
+        #todo check if there are more than two flights at that gate
+        i_1 = random.randint(1, self.prob.n)
+        j_1 = random.randint(1, self.prob.n)
+        i_2 = random.randint(1, self.prob.n)
+        j_2 = random.randint(1, self.prob.n)
+        while i_1 == j_1 or i_2 == j_2:
+            j_1 = random.randint(1, self.prob.n)
+            j_2 = random.randint(1, self.prob.n)
+        k_1 = self.A.loc[i_1, 'A']
+        k_2 = self.A.loc[i_2, 'A']
+        # calculate the respecting t values (see Lim 2005)
+        tmp = pd.DataFrame()
+        tmp = self.get_gate_schedule(k_2)[['d', 'c']]
+        tmp['end'] = tmp['d']+tmp['c']
+        t_11 = 0
+        idx = tmp.index.get_loc(i_1)
+        if(idx != 0):
+            t_11 = tmp.iloc[idx-1,'end']
+        idx = tmp.index.get_loc(j_1)+1
+        t_12 = sys.maxsize
+        if(j_1!=tmp['c'].idxmax(axis=0)):
+            for x, (jj, row) in enumerate(tmp.iterrows()):
+                if x == idx:
+                    t_12 = self.attempt_shift_right(jj, k_1)
+                    break
+        t_13 = self.c_i.loc[i_1, 'c']
+        t_14 = self.c_i.loc[j_1, 'c'] + self.prob.d_i.loc[j_1, 'd']
+        t_15 = self.attempt_shift_interval_right(i_1, j_1, k_1)
+        t_16 = self.prob.b_i.loc[j_1, 'b']
+
+
 
     # todo OLI: make more efficient if possible
     def create_A(self):
