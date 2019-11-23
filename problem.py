@@ -10,6 +10,7 @@ class Problem:
                  n,
                  m):
 
+        # index lengths
         self.n = n
         self.m = m
 
@@ -17,7 +18,15 @@ class Problem:
         self.i = range(1, n + 1)
         self.k = range(1, m + 1)
 
-        # input dataframes
+        # numpy arrays
+        self.a = np.empty(self.n)
+        self.b = np.empty(self.n)
+        self.d = np.empty(self.n)
+        self.p = np.empty(self.n)
+        self.f = np.empty([self.n, self.n])
+        self.w = np.empty([self.m, self.m])
+
+        # pandas dataframes
         self.a_i = pd.DataFrame()
         self.b_i = pd.DataFrame()
         self.d_i = pd.DataFrame()
@@ -30,32 +39,30 @@ class Problem:
 
     # creates data with regards to the number of flights n and number of gates m
     def create_data(self):
+
         # parameter
         des = 0.7
 
-        # setting of random values
-        a = np.random.uniform(1, self.n * 70 / self.m, self.n)
-        b = a + np.random.uniform(45, 74, self.n)
-        d = des * (b - a)
-        p = np.random.uniform(10, 14, self.n)
-        f = np.where(a.reshape(self.n, 1) < a, np.random.randint(6, 60, [self.n, self.n]), 0)
-
-        # gate distances
-        w = self.create_distance_matrix()
+        # create arrays randomly
+        self.a = np.random.uniform(1, self.n * 70 / self.m, self.n)
+        self.b = self.a + np.random.uniform(45, 74, self.n)
+        self.d = des * (self.b - self.a)
+        self.p = np.random.uniform(10, 14, self.n)
+        self.f = np.where(self.a.reshape(self.n, 1) < self.a, np.random.randint(6, 60, [self.n, self.n]), 0)
+        self.w = self.create_distance_matrix()
 
         # create dataframes
-        self.a_i = pd.DataFrame(data={'a': a, 'i': self.i}).set_index('i')
-        self.b_i = pd.DataFrame(data={'b': b, 'i': self.i}).set_index('i')
-        self.d_i = pd.DataFrame(data={'d': d, 'i': self.i}).set_index('i')
-        self.p_i = pd.DataFrame(data={'p': p, 'i': self.i}).set_index('i')
-        self.w_kl = pd.DataFrame(data={'w': w.flatten()},
-                                 index=pd.MultiIndex.from_product([self.k, self.k],
-                                                                  names=['k', 'l']))
-        self.f_ij = pd.DataFrame(data={'f': f.flatten()},
+        self.a_i = pd.DataFrame(data={'a': self.a, 'i': self.i}).set_index('i')
+        self.b_i = pd.DataFrame(data={'b': self.b, 'i': self.i}).set_index('i')
+        self.d_i = pd.DataFrame(data={'d': self.d, 'i': self.i}).set_index('i')
+        self.p_i = pd.DataFrame(data={'p': self.p, 'i': self.i}).set_index('i')
+        self.f_ij = pd.DataFrame(data={'f': self.f.flatten()},
                                  index=pd.MultiIndex.from_product([self.i, self.i],
                                                                   names=['i', 'j']))
+        self.w_kl = pd.DataFrame(data={'w': self.w.flatten()},
+                                 index=pd.MultiIndex.from_product([self.k, self.k],
+                                                                  names=['k', 'l']))
 
-    # distance matrix
     def create_distance_matrix(self):
         w = np.empty([self.m, self.m])
         for k in range(self.m):

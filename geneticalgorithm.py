@@ -1,187 +1,158 @@
-import timeit
-
 import numpy as np
-import pandas as pd
-
-import random
 
 
 class GeneticAlgorithm:
 
-    def __init__(self, prob, pop_n=None, crossover_n=None, iter_n=None, p1=None, term=None):
+    def __init__(self, problem, n_iter=None, n_term=None, n_pop=None, n_crossover=None, crossover_type=None, p1=None):
 
-        self.prob = prob
-        self.pop_n = pop_n or 3
-        self.crossover_n = crossover_n or 10
-        self.iter_n = iter_n or 100
+        # parameter
+        self.n_iter = n_iter or 10000
+        self.n_term = n_term or 500
+        self.n_pop = n_pop or 300
+        self.n_crossover = n_crossover or 500
+        self.crossover_type = crossover_type or '2p'
         self.p1 = p1 or 0.2
-        self.term = term or 10
-        self.pop = {}
-        self.obj = {}
+
+        # input
+        self.prob = problem
+
+        # population
+        self.pop = np.empty([self.n_pop, self.prob.n])
+        self.pop_obj = np.empty(self.n_pop)
         self.best = None
 
     def solve(self):
 
-        self.create_initial_population()
-        n = self.pop_n
         z = 0
+        self.create_initial_population()
 
-        for x in range(self.iter_n):
-            for y in range(self.crossover_n):
+        for x in range(self.n_iter):
 
-                par1 = random.choice(list(self.pop.values()))
-                par2 = random.choice(list(self.pop.values()))
+            print(self.best)
 
-                off1, off2 = self.one_point_crossover(par1, par2)
-
-                if np.random.rand() <= self.p1:
-                    off1 = self.mutation(off1)
-                if np.random.rand() <= self.p1:
-                    off2 = self.mutation(off2)
-
-                off1, obj1 = self.generate_solution(off1)
-                if obj1 is not None:
-                    self.pop[n] = off1
-                    self.obj[n] = obj1
-                    n += 1
-
-                off2, obj2 = self.generate_solution(off2)
-                if obj2 is not None:
-                    self.pop[n] = off2
-                    self.obj[n] = obj2
-                    n += 1
-
-            top = [key for key in sorted(self.obj, key=self.obj.get)[:self.pop_n]]
-            self.pop = {key: self.pop[key] for key in top}
-            print(self.pop)
-            if x == 0:
-                self.best = min(self.obj.values())
-            elif min(self.obj.values()) < self.best:
-                self.best = min(self.obj.values())
-            elif z <= self.term:
-                z += 1
-            else:
+            # terminal condition
+            if z >= self.n_term:
                 break
+
+            # crossover
+            par1 = self.pop[np.random.randint(0, self.n_pop, self.n_crossover), :]
+            par2 = self.pop[np.random.randint(0, self.n_pop, self.n_crossover), :]
+            if self.crossover_type == '1p':
+                off1, off2 = self.one_point_crossover(par1, par2)
+            if self.crossover_type == '2p':
+                off1, off2 = self.two_point_crossover(par1, par2)
+
+            # mutation
+            off = np.vstack([off1, off2])
+            off = np.where(np.random.rand(self.n_crossover * 2, 1) <= self.p1, self.mutation(off), off)
+
+            # calculate objective values
+            off_obj = np.empty(self.n_crossover * 2)
+            infeasible = []
+            for y in range(self.n_crossover * 2):
+                s, c = self.generate_solution(off[y])
+                if c is None:
+                    infeasible.append(y)
+                else:
+                    off[y] = s
+                    off_obj[y] = self.calculate_objective_value(s, c)
+
+            # add feasible individuals to population
+            off = np.delete(off, infeasible, 0)
+            off_obj = np.delete(off_obj, infeasible, 0)
+            self.pop = np.vstack([self.pop, off])
+            self.pop_obj = np.concatenate([self.pop_obj, off_obj])
+
+            # keep best individuals
+            top = np.argsort(self.pop_obj)[:self.n_pop]
+            self.pop = self.pop[top]
+            self.pop_obj = self.pop_obj[top]
+
+            # update best solution
+            if np.min(self.pop_obj) < self.best:
+                self.best = np.min(self.pop_obj)
+                z = 0
+            else:
+                z += 1
 
         return self.best
 
     def create_initial_population(self):
 
-        for n in range(self.pop_n):
+        for n in range(self.n_pop):
 
-            indv = None
-            obj = None
+            s = None
+            c = None
 
-            print(n)
+            while c is None:
+                s = np.random.randint(0, self.prob.m, self.prob.n)
+                s, c = self.generate_solution(s)
 
-            while obj is None:
-                indv = np.random.randint(1, self.prob.m + 1, self.prob.n)
-                indv, obj = self.generate_solution(indv)
+            obj = self.calculate_objective_value(s, c)
 
-            self.pop[n] = indv
-            self.obj[n] = obj
+            self.pop[n] = s
+            self.pop_obj[n] = obj
 
-    def generate_solution(self, indv):
+        self.best = min(self.pop_obj)
 
-        sol = Solution(self.prob)
-
-        for i, k in enumerate(indv, 1):
-
-            g = k
-            x = 0
+    def generate_solution(self, s):
+        s_new = np.empty(self.prob.n)
+        c = np.zeros(self.prob.n)
+        for i in self.prob.a.argsort():
+            k = s[i]
             successful = False
-
-            while x < self.prob.m:
-
-                sched = sol.get_gate_schedule(g)
-
-                if sched.empty:
-                    sol.c_i.loc[i] = self.prob.a_i.loc[i, 'a']
-                    sol.x_ik.loc[(i, g)] = 1
-                    indv[i - 1] = g
+            x = 0
+            while x < self.prob.m - 1:
+                c_max = np.amax(np.where(s_new == k, np.maximum(c + self.prob.d, self.prob.a[i]), self.prob.a[i]))
+                if self.prob.b[i] - c_max >= self.prob.d[i]:
+                    c[i] = c_max
+                    s_new[i] = k
                     successful = True
                     break
-
-                space = self.prob.b_i.loc[i, 'b'] - self.prob.a_i.loc[i, 'a'] \
-                        + (sched['c'].clip(lower=self.prob.a_i.loc[i, 'a'])
-                           - (sched['c'] + sched['d']).clip(upper=self.prob.b_i.loc[i, 'b'])).clip(upper=0).sum()
-
-                if space >= self.prob.d_i.loc[i, 'd']:
-
-                    sol.c_i.loc[i] = (sched['c'] + sched['d']).clip(lower=self.prob.a_i.loc[i, 'a']) \
-                        .where(sched['c'] < self.prob.a_i.loc[i, 'a'], self.prob.a_i.loc[i, 'a']).max()
-
-                    sol.x_ik.loc[(i, g)] = 1
-                    indv[i - 1] = g
-                    successful = True
-                    break
-
-                g = g % self.prob.m + 1
-                x += 1
-
+                else:
+                    k = k % (self.prob.m - 1) + 1
+                    x += 1
             if not successful:
-                return indv, None
+                return s, None
 
-        return indv, sol.calculate_objective_value()
+        return s_new, c
+
+    def calculate_objective_value(self, s, c):
+
+        sum_delay_penalty = np.sum(self.prob.p * (c - self.prob.a))
+
+        x = np.zeros([self.prob.n, self.prob.m])
+        x[np.arange(self.prob.n), s.astype(np.int64)] = 1
+
+        sum_walking_distance = np.sum(x.reshape(self.prob.n, 1, self.prob.m, 1)
+                                      * x.reshape(1, self.prob.n, 1, self.prob.m)
+                                      * self.prob.f.reshape(self.prob.n, self.prob.n, 1, 1)
+                                      * self.prob.w.reshape(1, 1, self.prob.m, self.prob.m))
+
+        return sum_delay_penalty + sum_walking_distance
 
     def one_point_crossover(self, par1, par2):
 
-        cross = np.random.randint(0, self.prob.n)
-        off1 = np.concatenate([par1[:cross], par2[cross:]])
-        off2 = np.concatenate([par2[:cross], par1[cross:]])
+        cross = np.random.randint(0, self.prob.n, [self.n_crossover, 1])
+        r = np.arange(self.prob.n)
+        off1 = np.where(r < cross, par1, par2)
+        off2 = np.where(r < cross, par2, par1)
         return off1, off2
 
     def two_point_crossover(self, par1, par2):
 
-        cross1 = np.random.randint(0, self.prob.n)
-        cross2 = np.random.randint(0, self.prob.n)
-        off1 = np.concatenate([par1[:cross1], par2[cross1:cross2], par1[cross2:]])
-        off2 = np.concatenate([par2[:cross1], par1[cross1:cross2], par2[cross2:]])
+        cross1 = np.random.randint(0, self.prob.n, [self.n_crossover, 1])
+        cross2 = np.random.randint(0, self.prob.n, [self.n_crossover, 1])
+        r = np.arange(self.prob.n)
+        off1 = np.where((r < cross1) & (r > cross2), par1, par2)
+        off2 = np.where((r < cross1) & (r > cross2), par2, par1)
         return off1, off2
 
-    def mutation(self, indv):
-        switch1 = np.random.randint(0, self.prob.n)
-        switch2 = np.random.randint(0, self.prob.n)
-        mut = np.copy(indv)
-        mut[switch1], mut[switch2] = indv[switch2], indv[switch1]
+    def mutation(self, off):
+
+        switch1 = np.random.randint(0, self.prob.n, self.n_crossover * 2)
+        switch2 = np.random.randint(0, self.prob.n, self.n_crossover * 2)
+        mut = np.copy(off)
+        mut[np.arange(len(switch1)), switch1], mut[np.arange(len(switch2)), switch2] \
+            = off[np.arange(len(switch2)), switch2], off[np.arange(len(switch1)), switch1]
         return mut
-
-
-class Solution:
-
-    def __init__(self,
-                 prob,
-                 x_ik=None,
-                 c_i=None):
-
-        self.prob = prob
-        self.x_ik = x_ik or pd.DataFrame(data={'x': 0},
-                                         index=pd.MultiIndex.from_product([self.prob.i, self.prob.k],
-                                                                          names=['i', 'k']))
-        self.c_i = c_i or pd.DataFrame(data={'c': 0, 'i': self.prob.i}).set_index('i')
-        self.obj_value = 0
-
-    def calculate_objective_value(self):
-
-        sum_delay_penalty = np.sum(self.prob.p_i.to_numpy()
-                                   * (self.c_i.to_numpy()
-                                      - self.prob.a_i.to_numpy()))
-
-        sum_walking_distance = np.sum(self.x_ik.to_numpy().reshape(self.prob.n, 1, self.prob.m, 1)
-                                      * self.x_ik.to_numpy().reshape(1, self.prob.n, 1, self.prob.m)
-                                      * self.prob.f_ij.to_numpy().reshape(self.prob.n, self.prob.n, 1, 1)
-                                      * self.prob.w_kl.to_numpy().reshape(1, 1, self.prob.m, self.prob.m))
-
-        return sum_delay_penalty + sum_walking_distance
-
-    def get_schedule(self):
-        sched = self.x_ik.loc[self.x_ik['x'] == 1].join(
-            pd.concat([self.prob.a_i, self.prob.b_i, self.prob.d_i, self.c_i], axis=1), how='inner').sort_values(
-            by=['k', 'c']).drop(['x'], axis=1)
-        return sched
-
-    def get_gate_schedule(self, k):
-        sched = self.x_ik.loc[pd.IndexSlice[:, k], :].loc[self.x_ik['x'] == 1].join(
-            pd.concat([self.prob.a_i, self.prob.b_i, self.prob.d_i, self.c_i], axis=1), how='inner').sort_values(
-            by=['k', 'c']).drop(['x'], axis=1).reset_index(level=1, drop=True)
-        return sched
