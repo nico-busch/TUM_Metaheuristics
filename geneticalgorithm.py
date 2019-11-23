@@ -96,7 +96,7 @@ class GeneticAlgorithm:
         self.best = min(self.pop_obj)
 
     def generate_solution(self, s):
-        s_new = np.empty(self.prob.n)
+        s_new = np.empty(self.prob.n, dtype=int)
         c = np.zeros(self.prob.n)
         for i in self.prob.a.argsort():
             k = s[i]
@@ -122,7 +122,7 @@ class GeneticAlgorithm:
         sum_delay_penalty = np.sum(self.prob.p * (c - self.prob.a))
 
         x = np.zeros([self.prob.n, self.prob.m])
-        x[np.arange(self.prob.n), s.astype(np.int64)] = 1
+        x[np.arange(self.prob.n), s] = 1
 
         sum_walking_distance = np.sum(x.reshape(self.prob.n, 1, self.prob.m, 1)
                                       * x.reshape(1, self.prob.n, 1, self.prob.m)

@@ -552,3 +552,7 @@ Solution count 10: 12850.7 13025.2 13088.6 ... 19567.1
 
 Time limit reached
 Best objective 1.285066220559e+04, best bound 2.399707841101e+03, gap 81.3262%
+
+Gurobi 8.1.1 (win64, Python) logging started 11/23/19 15:19:53
+
+Academic license - for non-commercial use only
