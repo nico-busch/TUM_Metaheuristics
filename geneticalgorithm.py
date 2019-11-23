@@ -1,5 +1,5 @@
 import numpy as np
-
+import timeit
 
 class GeneticAlgorithm:
 
@@ -17,18 +17,20 @@ class GeneticAlgorithm:
         self.prob = problem
 
         # population
-        self.pop = np.empty([self.n_pop, self.prob.n])
+        self.pop = np.empty([self.n_pop, self.prob.n], dtype=int)
         self.pop_obj = np.empty(self.n_pop)
         self.best = None
 
     def solve(self):
 
         z = 0
-        self.create_initial_population()
+        if not self.create_initial_population():
+            print("No feasible solution achievable via greedy heuristic")
+            return None
 
         for x in range(self.n_iter):
 
-            print(self.best)
+            print("iteration: ", x + 1, "best: ", self.best)
 
             # terminal condition
             if z >= self.n_term:
@@ -57,6 +59,8 @@ class GeneticAlgorithm:
                     off[y] = s
                     off_obj[y] = self.calculate_objective_value(s, c)
 
+
+
             # add feasible individuals to population
             off = np.delete(off, infeasible, 0)
             off_obj = np.delete(off_obj, infeasible, 0)
@@ -69,8 +73,8 @@ class GeneticAlgorithm:
             self.pop_obj = self.pop_obj[top]
 
             # update best solution
-            if np.min(self.pop_obj) < self.best:
-                self.best = np.min(self.pop_obj)
+            if np.amin(self.pop_obj) < self.best:
+                self.best = np.amin(self.pop_obj)
                 z = 0
             else:
                 z += 1
@@ -83,11 +87,14 @@ class GeneticAlgorithm:
 
             s = None
             c = None
+            z = 0
 
             while c is None:
+                z += 1
+                if z >= 10000:
+                    return False
                 s = np.random.randint(0, self.prob.m, self.prob.n)
                 s, c = self.generate_solution(s)
-
             obj = self.calculate_objective_value(s, c)
 
             self.pop[n] = s
@@ -95,15 +102,18 @@ class GeneticAlgorithm:
 
         self.best = min(self.pop_obj)
 
+        return True
+
     def generate_solution(self, s):
-        s_new = np.empty(self.prob.n, dtype=int)
+        s_new = -np.ones(self.prob.n, dtype=int)
         c = np.zeros(self.prob.n)
         for i in self.prob.a.argsort():
             k = s[i]
             successful = False
             x = 0
             while x < self.prob.m - 1:
-                c_max = np.amax(np.where(s_new == k, np.maximum(c + self.prob.d, self.prob.a[i]), self.prob.a[i]))
+                c_max = self.prob.a[i] if s_new[s_new == k].size == 0 \
+                    else np.amax(np.maximum(c + self.prob.d, self.prob.a[i])[s_new == k])
                 if self.prob.b[i] - c_max >= self.prob.d[i]:
                     c[i] = c_max
                     s_new[i] = k
