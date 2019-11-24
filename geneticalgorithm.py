@@ -111,7 +111,7 @@ class GeneticAlgorithm:
             k = s[i]
             successful = False
             x = 0
-            while x < self.prob.m - 1:
+            while x < self.prob.m:
                 c_max = self.prob.a[i] if s_new[s_new == k].size == 0 \
                     else np.amax(np.maximum(c + self.prob.d, self.prob.a[i])[s_new == k])
                 if self.prob.b[i] - c_max >= self.prob.d[i]:
