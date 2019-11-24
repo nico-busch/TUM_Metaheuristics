@@ -1,5 +1,4 @@
 import numpy as np
-import timeit
 
 
 class GeneticAlgorithm:
@@ -29,9 +28,11 @@ class GeneticAlgorithm:
             print("Greedy heuristic cannot find feasible solution")
             return None
 
+        print('{:<10}{:>10}'.format('Iter', 'Best Obj'))
+
         for x in range(self.n_iter):
 
-            print("iteration: ", x + 1, "best: ", self.best)
+            print('{:<10}{:>10.4f}'.format(x, self.best))
 
             # terminal condition
             if z >= self.n_term:
@@ -132,7 +133,7 @@ class GeneticAlgorithm:
                                       * self.prob.f[:, :, np.newaxis, np.newaxis]
                                       * self.prob.w)
 
-        return s_new, (sum_delay_penalty + sum_walking_distance)
+        return s_new, sum_delay_penalty + sum_walking_distance
 
     def one_point_crossover(self, par1, par2):
 
