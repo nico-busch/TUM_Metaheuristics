@@ -1,6 +1,7 @@
 import numpy as np
 import timeit
 
+
 class GeneticAlgorithm:
 
     def __init__(self, problem, n_iter=None, n_term=None, n_pop=None, n_crossover=None, crossover_type=None, p1=None):
@@ -25,7 +26,7 @@ class GeneticAlgorithm:
 
         z = 0
         if not self.create_initial_population():
-            print("No feasible solution achievable via greedy heuristic")
+            print("Greedy heuristic cannot find feasible solution")
             return None
 
         for x in range(self.n_iter):
@@ -52,14 +53,12 @@ class GeneticAlgorithm:
             off_obj = np.empty(self.n_crossover * 2)
             infeasible = []
             for y in range(self.n_crossover * 2):
-                s, c = self.generate_solution(off[y])
-                if c is None:
+                s, obj = self.generate_solution(off[y])
+                if obj is None:
                     infeasible.append(y)
                 else:
                     off[y] = s
-                    off_obj[y] = self.calculate_objective_value(s, c)
-
-
+                    off_obj[y] = obj
 
             # add feasible individuals to population
             off = np.delete(off, infeasible, 0)
@@ -86,25 +85,25 @@ class GeneticAlgorithm:
         for n in range(self.n_pop):
 
             s = None
-            c = None
+            obj = None
             z = 0
 
-            while c is None:
+            while obj is None:
                 z += 1
                 if z >= 10000:
                     return False
                 s = np.random.randint(0, self.prob.m, self.prob.n)
-                s, c = self.generate_solution(s)
-            obj = self.calculate_objective_value(s, c)
+                s, obj = self.generate_solution(s)
 
             self.pop[n] = s
             self.pop_obj[n] = obj
 
-        self.best = min(self.pop_obj)
+        self.best = np.amin(self.pop_obj)
 
         return True
 
     def generate_solution(self, s):
+
         s_new = -np.ones(self.prob.n, dtype=int)
         c = np.zeros(self.prob.n)
         for i in self.prob.a.argsort():
@@ -125,21 +124,15 @@ class GeneticAlgorithm:
             if not successful:
                 return s, None
 
-        return s_new, c
-
-    def calculate_objective_value(self, s, c):
-
         sum_delay_penalty = np.sum(self.prob.p * (c - self.prob.a))
-
         x = np.zeros([self.prob.n, self.prob.m])
-        x[np.arange(self.prob.n), s] = 1
+        x[np.arange(self.prob.n), s_new] = 1
+        sum_walking_distance = np.sum(x[:, np.newaxis, :, np.newaxis]
+                                      * x[:, np.newaxis, :]
+                                      * self.prob.f[:, :, np.newaxis, np.newaxis]
+                                      * self.prob.w)
 
-        sum_walking_distance = np.sum(x.reshape(self.prob.n, 1, self.prob.m, 1)
-                                      * x.reshape(1, self.prob.n, 1, self.prob.m)
-                                      * self.prob.f.reshape(self.prob.n, self.prob.n, 1, 1)
-                                      * self.prob.w.reshape(1, 1, self.prob.m, self.prob.m))
-
-        return sum_delay_penalty + sum_walking_distance
+        return s_new, (sum_delay_penalty + sum_walking_distance)
 
     def one_point_crossover(self, par1, par2):
 

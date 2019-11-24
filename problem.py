@@ -48,7 +48,7 @@ class Problem:
         self.b = self.a + np.random.uniform(45, 74, self.n)
         self.d = des * (self.b - self.a)
         self.p = np.random.uniform(10, 14, self.n)
-        self.f = np.where(self.a.reshape(self.n, 1) < self.a, np.random.randint(6, 60, [self.n, self.n]), 0)
+        self.f = np.where(self.a[:, np.newaxis] < self.a, np.random.randint(6, 60, [self.n, self.n]), 0)
         self.w = self.create_distance_matrix()
 
         # create dataframes
