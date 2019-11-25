@@ -1,5 +1,5 @@
 from gurobipy import *
-"""
+
 class Gurobi:
 
     def __init__(self, prob):
@@ -8,7 +8,7 @@ class Gurobi:
         self.M = prob.b_i.max()['b']
         print(self.M)
 
-    def solve(self):
+    def solve1(self):
 
         model = Model()
         #model.Params.M = self.M
@@ -105,15 +105,6 @@ class Gurobi:
         model.optimize()
         print(model.objVal)
 
-"""
-
-class Gurobi:
-
-    def __init__(self, prob):
-
-        self.prob = prob
-        self.M = prob.b_i.max()['b']
-        print(self.M)
 
     def solve(self):
 
