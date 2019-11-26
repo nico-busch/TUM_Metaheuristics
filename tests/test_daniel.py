@@ -11,6 +11,5 @@ prob = Problem(12, 3)
 gur = Gurobi(prob)
 
 print(gur.solve())
-print(gur.solve1())
 
 
