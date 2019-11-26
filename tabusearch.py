@@ -74,6 +74,7 @@ class TabuSearch:
             Tabu[count % tabu_tenure] = TabuMove(curr_sol.A)
 
             # generate 'neigh' number of neighbours
+            # todo locale variable anpassen
             while (count < neigh):
                 # choose method randomly (insert = true / interval exchange move = false)
                 method = bool(random.getrandbits(1))
@@ -316,7 +317,6 @@ class TabuSearch:
 
     # todo
     def insert(self):
-
 
         # todo change to self to Solution method
 

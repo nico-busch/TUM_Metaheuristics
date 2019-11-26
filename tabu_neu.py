@@ -21,3 +21,9 @@ class TabuSearch:
         # output
         self.best = np.empty(self.prob.n, dtype=int)
         self.best_obj = None
+
+    def solve(self):
+
+        # create initial solution
+
+

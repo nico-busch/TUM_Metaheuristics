@@ -61,7 +61,7 @@ sol = TabuSearch(prob, c_i, x_ik)
 sched = sol.get_schedule()
 
 """
-prob = Problem(15,4)
+prob = Problem(12, 3)
 sol = TabuSearch(prob)
 sched = sol.get_schedule()
 
