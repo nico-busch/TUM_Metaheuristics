@@ -21,11 +21,41 @@ class TabuSearch:
         # output
         self.best = np.empty(self.prob.n, dtype=int)
         self.best_obj = None
-        self.best_c = np.empty(self.prob.n, dtype=float)
+
+    def create_initial_solution(self):
+
+        s = np.random.randint(0, self.prob.m, self.prob.n)
+        c = np.zeros(self.prob.n)
+        for i in self.prob.a.argsort():
+            k = s[i]
+            successful = False
+            x = 0
+            while x < self.prob.m:
+                c_max = self.prob.a[i] if s[s == k].size == 0 \
+                    else np.amax(np.maximum(c + self.prob.d, self.prob.a[i])[s == k])
+                if self.prob.b[i] - c_max >= self.prob.d[i]:
+                    c[i] = c_max
+                    s[i] = k
+                    successful = True
+                    break
+                else:
+                    k = k % (self.prob.m - 1) + 1
+                    x += 1
+            if not successful:
+                return s, None
+        return s, c
 
     def solve(self):
 
         # create initial solution
+        z = 0
+        while c is None:
+            if z > 10000:
+                print("Greedy heuristic cannot find feasible solution")
+                return None
+            s, c = self.create_initial_solution()
+            z += 1
+        print(s, c)
         # self.best creation
 
         # local best solution
@@ -99,8 +129,5 @@ class TabuSearch:
         self.sol = curr_sol
         self.sol_obj_val = curr_obj_val
         print(self.sol_obj_val)
-
-
-
 
 
