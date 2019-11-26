@@ -88,8 +88,6 @@ class TabuSearch:
             c[y] = c_new
         return c
 
-            # update forbidden solutions
-            self.tabu_tenure[count_tabu % self.n_tabu_tenure] = curr_sol
     def shift_right(self, s, c, k, i, t):
         idx, = np.where(s == k)
         sched = idx[np.argsort(c[idx])]
@@ -99,23 +97,6 @@ class TabuSearch:
             c[y] = c_new
         return c
 
-            # generate neighbours
-            while (count < self.n_neigh):
-                # choose method randomly (insert = true / interval exchange move = false)
-                method = bool(random.getrandbits(1))
-                if (method == True):
-                    working_sol, working_c, succ = self.insert(curr_sol, curr_sol_c)
-                    if (succ):
-                        self.neigh[count, :] = working_sol
-                        self.neigh_c[count, :] = working_c
-                        count += 1
-                else:
-                    working_sol, working_c, succ = self.interval_exchange(curr_sol, curr_sol_c)
-                    if (succ):
-                        self.neigh[count, :] = working_sol
-                        self.neigh_c[count, :] = working_c
-                        count += 1
-            count = 0
     def attempt_shift_right(self, s, c, k, i):
         idx, = np.where(s == k)
         sched = idx[np.argsort(c[idx])]
@@ -126,8 +107,6 @@ class TabuSearch:
             c[y] = c_new
         return c[i]
 
-            # calculate all objective values of neighbours
-            self.neigh_obj_val = apply_along_axis(self.create_initial_solution, 1, self.neigh)
     def shift_interval(self, s, c, k, i, j, t):
         idx, = np.where(s == k)
         sched = idx[np.argsort(c[idx])]
@@ -138,8 +117,6 @@ class TabuSearch:
             c[y] = c_new
         return c
 
-            # Choose best solution
-            idx_best = np.argmin(self.neigh_obj_val)
     def attempt_shift_interval(self, s, c, k, i, j, t):
         idx, = np.where(s == k)
         sched = idx[np.argsort(c[idx])]
@@ -150,55 +127,6 @@ class TabuSearch:
             c[y] = c_new
         return c[j] + self.prob.d[j]
 
-            # Check if best solution is forbidden
-            forbidden = False
-            for i in range(self.tabu_tenure):
-                if (np.array_equal(self.tabu_tenure[i], self.neigh[idx_best, :])):
-                    forbidden = True
-                    break
-
-            # Check if better than current solution or not forbidden
-            if (self.neigh_obj_val[idx_best] < curr_obj_val or forbidden == False):
-                curr_sol = self.neigh[idx_best, :]
-                curr_obj_val = self.neigh_obj_val[idx_best]
-                curr_sol_c = self.neigh_c[idx_best, :]
-                count_tabu += 1
-                if (curr_obj_val < self.best_obj):
-                    self.best_obj = curr_obj_val
-                    self.best = curr_sol
-                    self.best_c = curr_sol_c
-                    count_unchanged = 0
-                else:
-                    count_unchanged += 1
-            else:
-                count_unchanged += 1
-
-            count_iter += 1
-            print(self.sol_obj_val)
-
-    def insert(self, curr_sol, curr_sol_c):
-
-        # Choose randomly a flight i and gate k
-        i = random.randint(0, self.prob.n - 1)
-        k = random.randint(0, self.prob.m - 1)
-        while k == curr_sol[i]:
-            k = random.randint(1, self.prob.m)
-
-        # todo special case if no flights are at the gate ! ! ! !
-
-        # get gate specific duration end times
-        curr_sol_end = curr_sol_c + self.prob.d
-        gate_end_times = np.where(curr_sol == k, curr_sol, -1*curr_sol)*curr_sol_end
-        idx, = np.where(curr_sol == k)
-        sched = idx[np.argsort(curr_sol_c[idx])]
-
-        # find the possible predecessor of flight i at new gate k
-        gate_predecessors = np.where(gate_end_times < starttime_i, gate_end_times, -1*gate_end_times)
-        gap_start = 0
-        predecessor_idx = None
-        if(np.sum(gate_precessors) >= 0):
-            predecessor_idx = gate_predecessors.argmax()
-            gap_start = curr_sol_end[predecessor_idx]
     def attempt_shift_interval_right(self, s, c, k, i, j):
         idx, = np.where(s == k)
         sched = idx[np.argsort(c[idx])]
@@ -210,52 +138,32 @@ class TabuSearch:
             c[y] = c_new
         return c[i]
 
+    def insert(self, s_old, c):
 
-        # find the possible successor of flight i at new gate k
-        gate_successors = np.where(gate_end_times > starttime_i, gate_end_times, -1*gate_end_times)
-        gap_end = float('inf')
-        successor_idx = None
-        if(np.sum(gate_successors) >= 0):
-            successor_idx = np.where(gate_successors > 0, gate_successors, float('inf')).argmin()
-            gap_end = self.attempt_shift_right(np.argwhere(sched == successor_idx), k)
+        s = s_old.copy()
 
-        # check if flight i fits into the gap
-        if (gap_end - gap_start >= self.prob.d[i]):
-            # update new x
-            new_sol = np.copy(curr_sol)
-            new_sol[i] = k
-            # update new c
-            new_sol_c = np.copy(curr_sol_c)
-            if (gap_start < self.prob.a[i]):
-                new_sol_c[i] = self.prob.a[i]
-            else:
-                new_sol_c[i] = gap_start
-            # update all successors
-            if (gap_end != float('inf')):
-                self.shift_right(k, np.argwhere(sched == successor_idx), gap_start + self.prob.d[i])
-                self.shift_left(np.argwhere(sched == successor_idx), k)
-            return True
-        # return false if insert move could not be realized
-        else:
-            return False
+        # Choose randomly a flight i and gate k
+        i = np.random.randint(0, self.prob.n)
+        k = np.random.choice(np.setdiff1d(range(self.prob.m), s_old[i]))
 
-
-    # todo Nico löschen
-    def shift_left(self, s, c, k, i):
         idx, = np.where(s == k)
         sched = idx[np.argsort(c[idx])]
-        loc = np.where(sched == i)[0][0]
+        loc = np.where(c[sched] + self.prob.d[sched] > self.prob.a[i])[0][0]
+
+        successful = False
+
         for x, y in enumerate(sched[loc:], loc):
-            c_new = self.prob.a[y] if x == 0 \
-                else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
-            c[y] = c_new
-        return c
+            t_1 = 0 if x == 0 else c[sched[x - 1]] + self.prob.d[sched[x - 1]]
+            t_2 = float('inf') if x == sched.size - 1 else self.attempt_shift_right(s, c, k, y)
+            if t_2 - t_1 >= self.prob.d[i]:
+                c = self.shift_right(s, c, k, y, t_1 + self.prob.d[i])
+                c[i] = t_1
+                s[i] = k
+                idx_old, = np.where(s_old == s_old[i])
+                sched_old = idx_old[np.argsort(c[idx_old])]
+                loc_old = np.where(sched_old == i)[0][0]
+                c = self.shift_left(s, c, s_old[i], loc_old)
+                successful = True
+                break
 
-    def shift_right(self, s, c, k, i, t):
-        idx, = np.where(s == k)
-        sched = idx[np.argsort(c[idx])]
-        loc, = np.where(sched == i)
-        for x, y in enumerate(sched[loc[0]:], loc[0]):
-            c_new = t if x == loc[0] else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
-            c[y] = c_new
-        return c
+        return s, c, successful
