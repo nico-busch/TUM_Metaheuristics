@@ -8,7 +8,7 @@ prob = Problem(12, 3)
 
 start_time = timeit.default_timer()
 ts = TabuSearch(prob)
-ts.solve()
+print(ts.solve())
 print("time: ", timeit.default_timer() - start_time)
 
 # start_time = timeit.default_timer()

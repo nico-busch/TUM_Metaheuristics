@@ -3,15 +3,22 @@ import numpy as np
 
 class GeneticAlgorithm:
 
-    def __init__(self, problem, n_iter=None, n_term=None, n_pop=None, n_crossover=None, crossover_type=None, p1=None):
+    def __init__(self,
+                 problem,
+                 n_iter=10**4,
+                 n_term=500,
+                 n_pop=300,
+                 n_crossover=500,
+                 crossover_type='2p',
+                 p1=0.2):
 
         # parameter
-        self.n_iter = n_iter or 10000
-        self.n_term = n_term or 500
-        self.n_pop = n_pop or 300
-        self.n_crossover = n_crossover or 500
-        self.crossover_type = crossover_type or '2p'
-        self.p1 = p1 or 0.2
+        self.n_iter = n_iter
+        self.n_term = n_term
+        self.n_pop = n_pop
+        self.n_crossover = n_crossover
+        self.crossover_type = crossover_type
+        self.p1 = p1
 
         # input
         self.prob = problem
@@ -23,7 +30,7 @@ class GeneticAlgorithm:
 
     def solve(self):
 
-        z = 0
+        count_term = 0
         if not self.create_initial_population():
             print("Greedy heuristic cannot find feasible solution")
             return None
@@ -35,7 +42,7 @@ class GeneticAlgorithm:
             print('{:<10}{:>10.4f}'.format(x, self.best))
 
             # terminal condition
-            if z >= self.n_term:
+            if count_term >= self.n_term:
                 break
 
             # crossover
@@ -75,9 +82,9 @@ class GeneticAlgorithm:
             # update best solution
             if np.amin(self.pop_obj) < self.best:
                 self.best = np.amin(self.pop_obj)
-                z = 0
+                count_term = 0
             else:
-                z += 1
+                count_term += 1
 
         return self.best
 
@@ -87,14 +94,14 @@ class GeneticAlgorithm:
 
             s = None
             obj = None
-            z = 0
+            count_feas = 0
 
             while obj is None:
-                z += 1
-                if z >= 10000:
+                if count_feas >= self.n_pop * 50:
                     return False
                 s = np.random.randint(0, self.prob.m, self.prob.n)
                 s, obj = self.generate_solution(s)
+                count_feas += 1
 
             self.pop[n] = s
             self.pop_obj[n] = obj
