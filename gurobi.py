@@ -8,7 +8,7 @@ class Gurobi:
         self.M = prob.b_i.max()['b']
         print(self.M)
 
-    def solve1(self):
+ """ def solve1(self):
 
         model = Model()
         #model.Params.M = self.M
@@ -104,7 +104,7 @@ class Gurobi:
         model.update()
         model.optimize()
         print(model.objVal)
-
+"""
 
     def solve(self):
 
@@ -184,7 +184,11 @@ class Gurobi:
         model.addConstrs(y_ij[i, j] + y_ij[j, i] >= z_ijkl[i, j, k, k] for k in self.prob.k for i in self.prob.i for j in self.prob.i if i != j)
 
         model.update()
+        model.setParam('TimeLimit', 1800)
         model.optimize()
-        print(model.objVal)
+        objective_value = model.objVal
+        run_time = model.Runtime
+        print("Objective Value: ", round(objective_value))
+        print("Runtime: ", round(run_time))
 
         #model.computeIIS()
