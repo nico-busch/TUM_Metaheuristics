@@ -115,8 +115,7 @@ class TabuSearch:
     def shift_left(self, s, c, k, i):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-        loc = np.nonzero(sched == i)[0][0]
-        for x, y in enumerate(sched[loc:], loc):
+        for x, y in enumerate(sched[i:], i):
             c_new = self.prob.a[y] if x == 0 \
                 else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
@@ -125,17 +124,15 @@ class TabuSearch:
     def shift_right(self, s, c, k, i, t):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-        loc = np.nonzero(sched == i)[0][0]
-        for x, y in enumerate(sched[loc:], loc):
-            c_new = t if x == loc else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
+        for x, y in enumerate(sched[i:], i):
+            c_new = t if x == i else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
         return c
 
     def attempt_shift_right(self, s, c, k, i):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-        loc = np.nonzero(sched == i)[0][0]
-        for x, y in enumerate(sched[loc:][::-1]):
+        for x, y in enumerate(sched[i:][::-1]):
             c_new = self.prob.b[y] - self.prob.d[y] if x == 0 \
                 else np.minimum(self.prob.b[y], c[sched[-x + 1]]) - self.prob.d[y]
             c[y] = c_new
@@ -144,29 +141,23 @@ class TabuSearch:
     def shift_interval(self, s, c, k, i, j, t):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-        loc_i = np.nonzero(sched == i)[0][0]
-        loc_j = np.nonzero(sched == j)[0][0]
-        for x, y in enumerate(sched[loc_i:loc_j], loc_i):
-            c_new = t if x == loc_i else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
+        for x, y in enumerate(sched[i:j], i):
+            c_new = t if x == i else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
         return c
 
     def attempt_shift_interval(self, s, c, k, i, j, t):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-        loc_i = np.nonzero(sched == i)[0][0]
-        loc_j = np.nonzero(sched == j)[0][0]
-        for x, y in enumerate(sched[loc_i:loc_j], loc_i):
-            c_new = t if x == loc_i else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
+        for x, y in enumerate(sched[i:j], i):
+            c_new = t if x == i else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
         return c[j] + self.prob.d[j]
 
     def attempt_shift_interval_right(self, s, c, k, i, j):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-        loc_i = np.nonzero(sched == i)[0][0]
-        loc_j = np.nonzero(sched == j)[0][0]
-        for x, y in enumerate(sched[loc_i:loc_j][::-1], loc_j):
+        for x, y in enumerate(sched[i:j][::-1], j):
             c_new = self.prob.b[y] - self.prob.d[y] if x == 0 \
                 else np.minimum(self.prob.b[y], c[sched[-x + 1]]) - self.prob.d[y]
             c[y] = c_new
@@ -188,12 +179,12 @@ class TabuSearch:
 
         idx_new, = np.nonzero(s_new == k_new)
         sched_new = idx_new[np.argsort(c_new[idx_new])]
-        loc_new = np.nonzero(c_new[sched_new] + self.prob.d[sched_new] > self.prob.a[i])[0][0]
+        loc_new = np.nonzero(c_new[sched_new] + self.prob.d[sched_new] > self.prob.a[i])
 
         successful = False
-        for x, y in enumerate(sched_new[loc_new], loc_new):
-            t_1 = 0 if x == 0 else c_new[sched_new[x - 1]] + self.prob.d[sched_new[x - 1]]
-            t_2 = float('inf') if x == sched_new.size - 1 else self.attempt_shift_right(s_new, c_new, k_new, y)
+        for x, y in enumerate(sched_new[loc_new], loc_new[0][0]):
+            t_1 = self.prob.a[i] if x == 0 else c_new[sched_new[x - 1]] + self.prob.d[sched_new[x - 1]]
+            t_2 = np.inf if x == sched_new.size - 1 else self.attempt_shift_right(s_new, c_new, k_new, y)
             if t_2 - t_1 >= self.prob.d[i]:
                 c_new = self.shift_right(s_new, c_new, k_new, y, t_1 + self.prob.d[i])
                 c_new[i] = t_1
@@ -226,14 +217,14 @@ class TabuSearch:
         j_2 = sched_2[loc_j_2]
 
         t_11 = 0 if loc_i_1 == 0 else c_new[sched_1[loc_i_1 - 1]] + self.prob.d[sched_1[loc_i_1 - 1]]
-        t_12 = float('inf') if loc_j_1 == sched_1.size - 1 else self.attempt_shift_right(s, c, k_1, loc_j_1 + 1)
+        t_12 = np.inf if loc_j_1 == sched_1.size - 1 else self.attempt_shift_right(s, c, k_1, loc_j_1 + 1)
         t_13 = c_new[i_1]
         t_14 = c_new[j_1] + self.prob.d[j_1]
         t_15 = self.attempt_shift_interval_right(s_new, c_new, k_1, loc_i_1, loc_j_1)
         t_16 = self.prob.b[j_1]
 
         t_21 = 0 if loc_i_2 == 0 else c_new[sched_2[loc_i_2 - 1]] + self.prob.d[sched_2[loc_i_2 - 1]]
-        t_22 = float('inf') if loc_j_2 == sched_2.size - 1 else self.attempt_shift_right(s_new, c_new, k_2, loc_j_2 + 1)
+        t_22 = np.inf if loc_j_2 == sched_2.size - 1 else self.attempt_shift_right(s_new, c_new, k_2, loc_j_2 + 1)
         t_23 = c_new[i_2]
         t_24 = c_new[j_2] + self.prob.d[j_2]
         t_25 = self.attempt_shift_interval_right(s_new, c_new, k_2, loc_i_2, loc_j_2)
@@ -253,8 +244,7 @@ class TabuSearch:
 
                 return s_new, c_new, True
 
-        else:
-            return s, c, False
+        return s, c, False
 
     def calculate_objective_value(self, s, c):
         sum_delay_penalty = np.sum(self.prob.p * (c - self.prob.a))
