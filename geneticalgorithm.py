@@ -25,8 +25,13 @@ class GeneticAlgorithm:
 
         # population
         self.pop = np.empty([self.n_pop, self.prob.n], dtype=int)
+        self.pop_c = np.empty([self.n_pop, self.prob.n])
         self.pop_obj = np.empty(self.n_pop)
+
+        # output
         self.best = None
+        self.best_c = None
+        self.best_obj = None
 
     def solve(self):
 
@@ -37,9 +42,9 @@ class GeneticAlgorithm:
 
         print('{:<10}{:>10}'.format('Iter', 'Best Obj'))
 
-        for x in range(self.n_iter):
+        print('{:<10}{:>10.4f}'.format(0, self.best_obj))
 
-            print('{:<10}{:>10.4f}'.format(x, self.best))
+        for x in range(self.n_iter):
 
             # terminal condition
             if count_term >= self.n_term:
@@ -58,35 +63,43 @@ class GeneticAlgorithm:
             off = np.where(np.random.rand(self.n_crossover * 2, 1) <= self.p1, self.mutation(off), off)
 
             # calculate objective values
+            off_c = np.empty([self.n_crossover * 2, self.prob.n])
             off_obj = np.empty(self.n_crossover * 2)
             infeasible = []
             for y in range(self.n_crossover * 2):
-                s, obj = self.generate_solution(off[y])
+                s, c, obj = self.generate_solution(off[y])
                 if obj is None:
                     infeasible.append(y)
                 else:
                     off[y] = s
+                    off_c[y] = c
                     off_obj[y] = obj
 
             # add feasible individuals to population
             off = np.delete(off, infeasible, 0)
+            off_c = np.delete(off_c, infeasible, 0)
             off_obj = np.delete(off_obj, infeasible, 0)
             self.pop = np.vstack([self.pop, off])
+            self.pop_c = np.vstack([self.pop_c, off_c])
             self.pop_obj = np.concatenate([self.pop_obj, off_obj])
 
             # keep best individuals
-            top = np.argsort(self.pop_obj)[:self.n_pop]
-            self.pop = self.pop[top]
-            self.pop_obj = self.pop_obj[top]
+            top_idx = np.argsort(self.pop_obj)[:self.n_pop]
+            self.pop = self.pop[top_idx]
+            self.pop_c = self.pop_c[top_idx]
+            self.pop_obj = self.pop_obj[top_idx]
 
             # update best solution
-            if np.amin(self.pop_obj) < self.best:
-                self.best = np.amin(self.pop_obj)
+            if np.amin(self.pop_obj) < self.best_obj:
+                best_idx = np.argmin(self.pop_obj)
+                self.best = self.pop[best_idx]
+                self.best_c = self.pop_c[best_idx]
+                self.best_obj = self.pop_obj[best_idx]
                 count_term = 0
             else:
                 count_term += 1
 
-        return self.best
+            print('{:<10}{:>10.4f}'.format(x + 1, self.best_obj))
 
     def create_initial_population(self):
 
@@ -100,13 +113,17 @@ class GeneticAlgorithm:
                 if count_feas >= self.n_pop * 50:
                     return False
                 s = np.random.randint(0, self.prob.m, self.prob.n)
-                s, obj = self.generate_solution(s)
+                s, c, obj = self.generate_solution(s)
                 count_feas += 1
 
             self.pop[n] = s
+            self.pop_c[n] = c
             self.pop_obj[n] = obj
 
-        self.best = np.amin(self.pop_obj)
+        best_idx = np.argmin(self.pop_obj)
+        self.best = self.pop[best_idx]
+        self.best_c = self.pop_c[best_idx]
+        self.best_obj = self.pop_obj[best_idx]
 
         return True
 
@@ -130,7 +147,7 @@ class GeneticAlgorithm:
                     k = k % (self.prob.m - 1) + 1
                     x += 1
             if not successful:
-                return s, None
+                return s, None, None
 
         sum_delay_penalty = np.sum(self.prob.p * (c - self.prob.a))
         x = np.zeros([self.prob.n, self.prob.m])
@@ -140,7 +157,7 @@ class GeneticAlgorithm:
                                       * self.prob.f[:, :, np.newaxis, np.newaxis]
                                       * self.prob.w)
 
-        return s_new, sum_delay_penalty + sum_walking_distance
+        return s_new, c, sum_delay_penalty + sum_walking_distance
 
     def one_point_crossover(self, par1, par2):
 
