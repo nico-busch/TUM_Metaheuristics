@@ -16,7 +16,7 @@ def create_gantt(prob, s, c):
     df.index.name = 'Flight'
 
     # plot gantt chart
-    cmap = matplotlib.cm.get_cmap('Accent')
+    cmap = matplotlib.cm.get_cmap('Dark2')
     col1 = col2 = cmap(range(cmap.N))
     col2[:, -1] = 0.75
     matplotlib.rcParams.update({'font.size': 14})
