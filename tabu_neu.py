@@ -116,17 +116,18 @@ class TabuSearch:
 
     def create_initial_solution(self):
         s = np.random.randint(0, self.prob.m, self.prob.n)
+        s_new = -np.ones(self.prob.n, dtype=np.int64)
         c = np.zeros(self.prob.n)
         for i in self.prob.a.argsort():
             k = s[i]
             successful = False
             x = 0
             while x < self.prob.m:
-                c_max = self.prob.a[i] if s[s == k].size == 0 \
-                    else np.amax(np.maximum(c + self.prob.d, self.prob.a[i])[s == k])
+                c_max = self.prob.a[i] if s_new[s_new == k].size == 0 \
+                    else np.amax(np.maximum(c + self.prob.d, self.prob.a[i])[s_new == k])
                 if self.prob.b[i] - c_max >= self.prob.d[i]:
                     c[i] = c_max
-                    s[i] = k
+                    s_new[i] = k
                     successful = True
                     break
                 else:
@@ -134,14 +135,8 @@ class TabuSearch:
                     x += 1
             if not successful:
                 return s, None
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("initial solution c: " + str(c))
-            print("initial solution a: " + str(self.prob.a))
-            exit()
-
-        return s, c
+        gantt.create_gantt(self.prob, s_new, c)
+        return s_new, c
 
     def calculate_objective_value(self, s, c):
         sum_delay_penalty = np.sum(self.prob.p * (c - self.prob.a))
