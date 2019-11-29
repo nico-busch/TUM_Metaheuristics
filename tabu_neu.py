@@ -391,8 +391,10 @@ class TabuSearch:
                 c[sched_revers[x]] = self.prob.b[sched_revers[x]] - self.prob.d[sched_revers[x]]
             else:
                 c[sched_revers[x]] = np.minimum(self.prob.b[sched_revers[x]], c[sched[j-x+1]]) - self.prob.d[sched_revers[x]]
-                if(self.prob.a[sched_revers[x]] > c[sched_revers[x]]):
-                    print("att shift int right a > c")
+                if(np.around(self.prob.a[sched_revers[x]], decimals=1) > np.around(c[sched_revers[x]], decimals=1)):
+                    print("MIDDLE att shift int right a > c")
+                    print("att shift int right c: " + str(c))
+                    print("att shift int right A: " + str(self.prob.a))
                     exit()
 
         arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
