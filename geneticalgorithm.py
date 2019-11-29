@@ -1,6 +1,7 @@
 import numpy as np
 from numba import njit
 
+
 class GeneticAlgorithm:
 
     def __init__(self,
@@ -12,7 +13,7 @@ class GeneticAlgorithm:
                  crossover_type='2p',
                  p1=0.2):
 
-        # parameter
+        # Parameters
         self.n_iter = n_iter
         self.n_term = n_term
         self.n_pop = n_pop
@@ -20,38 +21,37 @@ class GeneticAlgorithm:
         self.crossover_type = crossover_type
         self.p1 = p1
 
-        # input
+        # Input
         self.prob = problem
 
-        # population
-        self.pop = np.empty([0, self.prob.n], dtype=np.int64)
-        self.pop_c = np.empty([0, self.prob.n])
-        self.pop_obj = None
-
-        # output
+        # Output
         self.best = None
         self.best_c = None
         self.best_obj = None
 
     def solve(self):
 
-        count_infeas = 0
-        while self.pop.shape[0] < 300:
-            s, c = self.generate_solution(
-                np.random.randint(0, self.prob.m, [self.n_pop - self.pop.shape[0], self.prob.n]))
-            self.pop = np.vstack([self.pop, s])
-            self.pop_c = np.vstack([self.pop_c, c])
-            if count_infeas >= 1000:
+        # Create the initial population
+        count_infeasible = 0
+        pop = np.empty((0, self.prob.n), dtype=np.int64)
+        pop_c = np.empty((0, self.prob.n))
+        while pop.shape[0] < 300:
+            if count_infeasible >= 10000:
                 print("Greedy heuristic cannot find enough feasible solutions")
-                return None
+                return self.best_obj
             else:
-                count_infeas += 1
+                s, c = self.generate_solution(
+                    np.random.randint(0, self.prob.m, [self.n_pop - pop.shape[0], self.prob.n]))
+                count_infeasible += self.n_pop - pop.shape[0] - s.shape[0]
+                pop = np.vstack([pop, s])
+                pop_c = np.vstack([pop_c, c])
+        pop_obj = self.calculate_objective_value(pop, pop_c)
 
-        self.pop_obj = self.calculate_objective_value(self.pop, self.pop_c)
-        best_idx = np.argmin(self.pop_obj)
-        self.best = self.pop[best_idx]
-        self.best_c = self.pop_c[best_idx]
-        self.best_obj = self.pop_obj[best_idx]
+        # Find the initial best solution
+        best_idx = np.argmin(pop_obj)
+        self.best = pop[best_idx]
+        self.best_c = pop_c[best_idx]
+        self.best_obj = pop_obj[best_idx]
 
         print('{:<10}{:>10}'.format('Iter', 'Best Obj'))
         print('{:<10}{:>10.4f}'.format('init', self.best_obj))
@@ -59,68 +59,75 @@ class GeneticAlgorithm:
         count_term = 0
         for x in range(self.n_iter):
 
-            # terminal condition
+            # Determine terminal condition
             if count_term >= self.n_term:
                 break
 
-            # crossover
-            par1 = self.pop[np.random.randint(0, self.n_pop, self.n_crossover), :]
-            par2 = self.pop[np.random.randint(0, self.n_pop, self.n_crossover), :]
+            # Perform crossover
+            par1 = pop[np.random.randint(0, self.n_pop, self.n_crossover), :]
+            par2 = pop[np.random.randint(0, self.n_pop, self.n_crossover), :]
             if self.crossover_type == '1p':
                 cross = np.random.randint(0, self.prob.n, [self.n_crossover, 1])
                 r = np.arange(self.prob.n)
                 off1 = np.where(r < cross, par1, par2)
                 off2 = np.where(r < cross, par2, par1)
-            if self.crossover_type == '2p':
+            elif self.crossover_type == '2p':
                 cross1 = np.random.randint(0, self.prob.n, [self.n_crossover, 1])
                 cross2 = np.random.randint(0, self.prob.n, [self.n_crossover, 1])
                 r = np.arange(self.prob.n)
                 off1 = np.where((r < cross1) & (r > cross2), par1, par2)
                 off2 = np.where((r < cross1) & (r > cross2), par2, par1)
+            else:
+                raise KeyError("Invalid crossover type argument passed")
             off = np.vstack([off1, off2])
 
-            # mutation
+            # Perform mutation with probability p1
             switch1 = np.random.randint(0, self.prob.n, self.n_crossover * 2)
             switch2 = np.random.randint(0, self.prob.n, self.n_crossover * 2)
             mut = np.copy(off)
-            mut[np.arange(len(switch1)), switch1], mut[np.arange(len(switch2)), switch2] \
-                = off[np.arange(len(switch2)), switch2], off[np.arange(len(switch1)), switch1]
+            mut[np.arange(self.n_crossover * 2), switch1], mut[np.arange(self.n_crossover * 2), switch2] \
+                = off[np.arange(self.n_crossover * 2), switch2], off[np.arange(self.n_crossover * 2), switch1]
             off = np.where(np.random.rand(self.n_crossover * 2, 1) <= self.p1, mut, off)
 
-            # calculate objective values
+            # Calculate objective values for offspring
             off, off_c = self.generate_solution(off)
             off_obj = self.calculate_objective_value(off, off_c)
 
-            # add feasible individuals to population
-            self.pop = np.vstack([self.pop, off])
-            self.pop_c = np.vstack([self.pop_c, off_c])
-            self.pop_obj = np.concatenate([self.pop_obj, off_obj])
+            # Add to population and keep best individuals
+            pop = np.vstack([pop, off])
+            pop_c = np.vstack([pop_c, off_c])
+            pop_obj = np.concatenate([pop_obj, off_obj])
+            top_idx = np.argsort(pop_obj)[:self.n_pop]
+            pop = pop[top_idx]
+            pop_c = pop_c[top_idx]
+            pop_obj = pop_obj[top_idx]
 
-            # keep best individuals
-            top_idx = np.argsort(self.pop_obj)[:self.n_pop]
-            self.pop = self.pop[top_idx]
-            self.pop_c = self.pop_c[top_idx]
-            self.pop_obj = self.pop_obj[top_idx]
-
-            # update best solution
-            if np.amin(self.pop_obj) < self.best_obj:
-                best_idx = np.argmin(self.pop_obj)
-                self.best = self.pop[best_idx]
-                self.best_c = self.pop_c[best_idx]
-                self.best_obj = self.pop_obj[best_idx]
+            # Update best solution
+            if np.amin(pop_obj) < self.best_obj:
+                best_idx = np.argmin(pop_obj)
+                self.best = pop[best_idx]
+                self.best_c = pop_c[best_idx]
+                self.best_obj = pop_obj[best_idx]
                 count_term = 0
             else:
                 count_term += 1
+
             print('{:<10}{:>10.4f}'.format(x + 1, self.best_obj))
+
+        return self.best_obj
 
     def generate_solution(self, s):
         return self._generate_solution(self.prob.n, self.prob.m, self.prob.a, self.prob.b, self.prob.d, s)
 
+    '''
+    Greedy algorithm to calculate feasible start times for a given gate assignment.
+    This method used numba's JIT compilation in nopython mode for faster for loops.
+    '''
     @staticmethod
     @njit
     def _generate_solution(n, m, a, b, d, s):
         s_new = -np.ones((s.shape[0], n), dtype=np.int64)
-        c = np.zeros((s.shape[0], n))
+        c = np.empty((s.shape[0], n))
         infeasible = np.empty(0, dtype=np.int64)
         for x in range(s.shape[0]):
             for i in a.argsort():
@@ -147,6 +154,10 @@ class GeneticAlgorithm:
         c = c[delete]
         return s_new, c
 
+    '''
+    Method to calculate the objective values for a whole population.
+    Utilizes np.einsum for fast tensor multiplication.
+    '''
     def calculate_objective_value(self, s, c):
         sum_delay_penalty = np.einsum('i,ni->n', self.prob.p, (c - self.prob.a))
 
