@@ -1,4 +1,5 @@
 import numpy as np
+import gantt
 
 
 class TabuSearch:
@@ -297,6 +298,7 @@ class TabuSearch:
             print("BEFORE")
             print("shift left c: " + str(c))
             print("shift left A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         idx, = np.nonzero(s == k)
@@ -312,6 +314,7 @@ class TabuSearch:
         if (True in arr):
             print("shift left c: " + str(c))
             print("shift left A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         return c
@@ -325,6 +328,7 @@ class TabuSearch:
             print("BEFORE")
             print("shift right c: " + str(c))
             print("shift right A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         idx, = np.nonzero(s == k)
@@ -337,6 +341,7 @@ class TabuSearch:
         if (True in arr):
             print("shift right c: " + str(c))
             print("shift right A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         return c
@@ -354,6 +359,7 @@ class TabuSearch:
             print("BEFORE")
             print("att shift right c: " + str(c[arr]))
             print("att shift right A: " + str(self.prob.a[arr]))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         for x, y in enumerate(sched_revers, 0):
@@ -367,6 +373,7 @@ class TabuSearch:
         if (True in arr):
             print("att shift right c: " + str(c[arr]))
             print("att shift right A: " + str(self.prob.a[arr]))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         return c[sched[i]]
@@ -384,6 +391,7 @@ class TabuSearch:
             print("BEFORE")
             print("att shift int right c: " + str(c))
             print("att shift int right A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         for x, y in enumerate(sched_revers, 0):
@@ -395,12 +403,14 @@ class TabuSearch:
                     print("MIDDLE att shift int right a > c")
                     print("att shift int right c: " + str(c))
                     print("att shift int right A: " + str(self.prob.a))
+                    gantt.create_gantt(self.prob, s, c)
                     exit()
 
         arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
         if (True in arr):
             print("att shift int right c: " + str(c))
             print("att shift int right A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         return c[sched[i]]
@@ -416,6 +426,7 @@ class TabuSearch:
             print("BEFORE")
             print("shift int c: " + str(c))
             print("shift int A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         for x, y in enumerate(sched[i:(j+1)], i):
@@ -427,6 +438,7 @@ class TabuSearch:
         if (True in arr):
             print("shift int c: " + str(c))
             print("shift int A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         return c
@@ -442,6 +454,7 @@ class TabuSearch:
             print("BEFORE")
             print("att shift int c: " + str(c))
             print("att shift int A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         for x, y in enumerate(sched[i:(j+1)], i):
@@ -452,6 +465,7 @@ class TabuSearch:
         if (True in arr):
             print("att shift int c: " + str(c))
             print("att shift int A: " + str(self.prob.a))
+            gantt.create_gantt(self.prob, s, c)
             exit()
 
         return c[sched[j]] + self.prob.d[sched[j]]

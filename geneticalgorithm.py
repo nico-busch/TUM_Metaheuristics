@@ -33,8 +33,8 @@ class GeneticAlgorithm:
 
         # Create the initial population
         count_infeasible = 0
-        pop = np.empty((0, self.prob.n), dtype=np.int64)
-        pop_c = np.empty((0, self.prob.n))
+        pop = np.empty([0, self.prob.n], dtype=np.int64)
+        pop_c = np.empty([0, self.prob.n])
         while pop.shape[0] < 300:
             if count_infeasible >= 10000:
                 print("Greedy heuristic cannot find enough feasible solutions")
@@ -117,7 +117,7 @@ class GeneticAlgorithm:
         return self.best_obj
 
     def generate_solution(self, s):
-        return self._generate_solution(self.prob.n, self.prob.m, self.prob.a, self.prob.b, self.prob.d, s)
+        return self._generate_solution(self.prob.m, self.prob.a, self.prob.b, self.prob.d, s)
 
     '''
     Greedy algorithm to calculate feasible start times for a given gate assignment.
@@ -125,9 +125,9 @@ class GeneticAlgorithm:
     '''
     @staticmethod
     @njit
-    def _generate_solution(n, m, a, b, d, s):
-        s_new = -np.ones((s.shape[0], n), dtype=np.int64)
-        c = np.empty((s.shape[0], n))
+    def _generate_solution(m, a, b, d, s):
+        s_new = -np.ones(s.shape, dtype=np.int64)
+        c = np.zeros(s.shape)
         infeasible = np.empty(0, dtype=np.int64)
         for x in range(s.shape[0]):
             for i in a.argsort():
