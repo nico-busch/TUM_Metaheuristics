@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import math
 
-
 # this class only creates instances (objects) of the problem
 class Problem:
 

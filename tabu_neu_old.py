@@ -126,30 +126,50 @@ class TabuSearch:
                 return s, None
         return s, c
 
-    # CONTROLLED II
-    def shift_left(self, s, c, k, i):
+    # CONTROLLED
+    def shift_left(self, s_old, c_old, k, i):
+        c = np.copy(c_old)
+        s = np.copy(s_old)
+
+        #print("shift left IN: " + str(c))
+
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched[i:], i):
             c_new = self.prob.a[y] if x == 0 \
                 else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
+
+        #print("shift left OUT: " + str(c))
+
         return c
 
-    # CONTROLLED II
-    def shift_right(self, s, c, k, i, t):
+    # CONTROLLED
+    def shift_right(self, s_old, c_old, k, i, t):
+        c = np.copy(c_old)
+        s = np.copy(s_old)
+
+        #print("shift right IN: " + str(c))
+        #print("TTTT: " + str(t))
+
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched[i:], i):
             c_new = np.maximum(t, self.prob.a[sched[i]]) if x == i else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
+
+        #print("shift right OUT: " + str(c))
+
         return c
 
     # CONTROLLED
-    # todo possibly optimizable
     def attempt_shift_right(self, s_old, c_old, k, i):
         c = np.copy(c_old)
         s = np.copy(s_old)
+
+        #print("attemp shift right IN: " + str(c))
+
+
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched, 0):
@@ -158,13 +178,18 @@ class TabuSearch:
                 c_new = self.prob.b[sched[z]] - self.prob.d[y] if z == sched.size-1 \
                     else np.minimum(self.prob.b[sched[z]], c[sched[z + 1]]) - self.prob.d[sched[z]]
                 c[sched[z]] = c_new
+
+        #print("attempt shift right OUT: " + str(c))
+
         return c[sched[i]]
 
     # CONTROLLED
-    # todo possibly optimizable
     def attempt_shift_interval_right(self, s_old, c_old, k, i, j):
         s = np.copy(s_old)
         c = np.copy(c_old)
+
+        #print("attemp shift interval right IN: " + str(c))
+
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched, 0):
@@ -173,45 +198,66 @@ class TabuSearch:
                 c_new = self.prob.b[y] - self.prob.d[y] if z == sched.size - 1 \
                     else np.minimum(self.prob.b[sched[z]], c[sched[z+1]]) - self.prob.d[sched[z]]
                 c[sched[z]] = c_new
+
+        #print("attemp shift interval right OUT: " + str(c))
+
         return c[sched[i]]
 
     # CONTROLLED
     def shift_interval(self, s_old, c_old, k, i, j, t):
         c = np.copy(c_old)
         s = np.copy(s_old)
+
+        #print("shift interval IN: " + str(c))
+
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched[i:(j+1)], i):
             c_new = np.maximum(t, self.prob.a[sched[x]]) if x == i else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
+
+        #print("shift interval OUT: " + str(c))
+
         return c
 
     # CONTROLLED
     def attempt_shift_interval(self, s_old, c_old, k, i, j, t):
         c = np.copy(c_old)
         s = np.copy(s_old)
+
+        #print("attemp shift interval IN: " + str(c))
+
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched[i:(j+1)], i):
             c_new = np.maximum(t, self.prob.a[sched[x]]) if x == i else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
+
+        #print("attemp shift interval OUT: " + str(c))
+
         return c[sched[j]] + self.prob.d[sched[j]]
 
     # CONTROLLED
-    # todo possibly optimizable
     def insert(self, s, c):
+
         s_new = np.copy(s)
         c_new = np.copy(c)
+
         # Choose randomly a flight i and gate k
         i = np.random.randint(0, self.prob.n)
         k = s[i]
         k_new = np.random.choice(np.setdiff1d(np.arange(self.prob.m), k))
+
+        idx, = np.nonzero(s_new == k)
+        sched = idx[np.argsort(c_new[idx])]
+
         idx_new, = np.nonzero(s_new == k_new)
         sched_new = idx_new[np.argsort(c_new[idx_new])]
         if(sched_new.size == 0):
             c_new[i] = self.prob.a[i]
             s_new[i] = k_new
             return s_new, c_new, True
+
         successful = False
         for x, y in enumerate(sched_new):
             if(c_new[x] + self.prob.d[x] > self.prob.a[i]):
@@ -224,6 +270,7 @@ class TabuSearch:
                     c_new = self.shift_left(s_new, c_new, k, 0)
                     successful = True
                     break
+
         return s_new, c_new, successful
 
     def interval_exchange(self, s, c):
@@ -282,6 +329,11 @@ class TabuSearch:
         return s, c, False
 
     def calculate_objective_value(self, s, c):
+
+        #print("s: " + str(s))
+        #print("c: " + str(c))
+        #print("a: " + str(self.prob.a))
+
         sum_delay_penalty = np.sum(self.prob.p * (c - self.prob.a))
         x = np.zeros([self.prob.n, self.prob.m])
         x[np.arange(self.prob.n), s] = 1
@@ -290,12 +342,9 @@ class TabuSearch:
                                       * self.prob.f[:, :, np.newaxis, np.newaxis]
                                       * self.prob.w)
 
-        # Control-Check
-        # todo delete if not necessary anymore
         if(sum_delay_penalty < 0):
             print("ERROR: c > a")
             exit()
-
         #print("sum_delay: " + str(sum_delay_penalty))
         #print("sum_waling: " + str(sum_walking_distance))
         #print("obj: " + str(sum_delay_penalty + sum_walking_distance))
