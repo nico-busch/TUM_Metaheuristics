@@ -37,8 +37,8 @@ class GeneticAlgorithm:
         pop_c = np.empty([0, self.prob.n])
         while pop.shape[0] < 300:
             if count_infeasible >= 10000:
-                print("Greedy heuristic cannot find enough feasible solutions")
-                return self.best_obj
+                print("The algorithm cannot find enough feasible solutions")
+                return None
             else:
                 s, c = self.generate_solution(
                     np.random.randint(0, self.prob.m, [self.n_pop - pop.shape[0], self.prob.n]))
