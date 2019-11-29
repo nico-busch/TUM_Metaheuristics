@@ -7,7 +7,7 @@ from gurobi import Gurobi
 prob = Problem(20, 5)
 
 start_time = timeit.default_timer()
-ga = GeneticAlgorithm(prob, n_iter=10)
+ga = GeneticAlgorithm(prob)
 ga.solve()
 print("time: ", timeit.default_timer() - start_time)
 
