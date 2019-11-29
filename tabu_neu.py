@@ -133,6 +133,13 @@ class TabuSearch:
                     x += 1
             if not successful:
                 return s, None
+
+        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
+        if (True in arr):
+            print("initial solution c: " + str(c))
+            print("initial solution a: " + str(self.prob.a))
+            exit()
+
         return s, c
 
     def calculate_objective_value(self, s, c):
@@ -385,7 +392,7 @@ class TabuSearch:
             else:
                 c[sched_revers[x]] = np.minimum(self.prob.b[sched_revers[x]], c[sched[j-x+1]]) - self.prob.d[sched_revers[x]]
                 if(self.prob.a[sched_revers[x]] > c[sched_revers[x]]):
-                    print("att shift right a > c")
+                    print("att shift int right a > c")
                     exit()
 
         arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
