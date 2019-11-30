@@ -7,8 +7,8 @@ class BeeColony:
     def __init__(self,
                  problem,
                  n_iter=10**4,
-                 n_term=500,
-                 n_bees=300):
+                 n_term=100,
+                 n_bees=1000):
 
         # Parameters
         self.n_iter = n_iter
@@ -106,10 +106,8 @@ class BeeColony:
         s_new = s.copy()
         s_new[:, i] = -1
         for x in range(s.shape[0]):
-            k = s[x, i]
             successful = False
-            count_k = 0
-            while count_k < m:
+            for k in np.roll(np.arange(m), -s[x, i]):
                 c_max = a[i] if s_new[x][s_new[x] == k].size == 0 \
                     else np.amax(np.maximum(c[x] + d, a[i])[s_new[x] == k])
                 if b[i] - c_max >= d[i]:
@@ -117,9 +115,6 @@ class BeeColony:
                     s_new[x, i] = k
                     successful = True
                     break
-                else:
-                    k = k % (m - 1) + 1
-                    count_k += 1
             if not successful:
                 infeasible = np.append(infeasible, x)
         return s_new, c, infeasible

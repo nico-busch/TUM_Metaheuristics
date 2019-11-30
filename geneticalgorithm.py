@@ -1,5 +1,6 @@
 import numpy as np
 from numba import njit
+import gantt
 
 
 class GeneticAlgorithm:
@@ -8,7 +9,7 @@ class GeneticAlgorithm:
                  problem,
                  n_iter=10**4,
                  n_term=500,
-                 n_pop=300,
+                 n_pop=10,
                  n_crossover=500,
                  crossover_type='2p',
                  p1=0.2):
@@ -35,7 +36,7 @@ class GeneticAlgorithm:
         count_infeasible = 0
         pop = np.empty([0, self.prob.n], dtype=np.int64)
         pop_c = np.empty([0, self.prob.n])
-        while pop.shape[0] < 300:
+        while pop.shape[0] < self.n_pop:
             if count_infeasible >= 10000:
                 print("The algorithm cannot find enough feasible solutions")
                 return None
@@ -93,14 +94,11 @@ class GeneticAlgorithm:
             off, off_c = self.generate_solution(off)
             off_obj = self.calculate_objective_value(off, off_c)
 
-            # Add to population and keep best individuals
-            pop = np.vstack([pop, off])
-            pop_c = np.vstack([pop_c, off_c])
-            pop_obj = np.concatenate([pop_obj, off_obj])
-            top_idx = np.argsort(pop_obj)[:self.n_pop]
-            pop = pop[top_idx]
-            pop_c = pop_c[top_idx]
-            pop_obj = pop_obj[top_idx]
+            # Carry top individuals to the next generation
+            top_idx = np.argsort(off_obj)[:self.n_pop]
+            pop = off[top_idx]
+            pop_c = off_c[top_idx]
+            pop_obj = off_obj[top_idx]
 
             # Update best solution
             if np.amin(pop_obj) < self.best_obj:
@@ -131,10 +129,8 @@ class GeneticAlgorithm:
         infeasible = np.empty(0, dtype=np.int64)
         for x in range(s.shape[0]):
             for i in a.argsort():
-                k = s[x, i]
                 successful = False
-                count_k = 0
-                while count_k < m:
+                for k in np.roll(np.arange(m), -s[x, i]):
                     c_max = a[i] if s_new[x][s_new[x] == k].size == 0 \
                         else np.amax(np.maximum(c[x] + d, a[i])[s_new[x] == k])
                     if b[i] - c_max >= d[i]:
@@ -142,9 +138,6 @@ class GeneticAlgorithm:
                         s_new[x, i] = k
                         successful = True
                         break
-                    else:
-                        k = k % (m - 1) + 1
-                        count_k += 1
                 if not successful:
                     infeasible = np.append(infeasible, x)
                     break
