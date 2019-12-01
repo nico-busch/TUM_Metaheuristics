@@ -9,7 +9,7 @@ from gurobi import Gurobi
 import gantt
 
 np.random.seed(1)
-prob = Problem(12, 3)
+prob = Problem(20, 5)
 
 start_time = timeit.default_timer()
 ts = TabuSearch(prob)

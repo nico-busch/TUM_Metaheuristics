@@ -26,7 +26,6 @@ class TabuSearch:
         self.best_c = None
         self.best_obj = None
 
-    #_________________________________________________________________________________________________
     # Main functions
 
     def solve(self):
@@ -117,10 +116,8 @@ class TabuSearch:
 
         return sum_delay_penalty + sum_walking_distance
 
-    #_________________________________________________________________________________________________
     # Routines: insert & interval exchange
 
-    # todo possibly optimizable
     def insert(self, s, c):
         # Choose randomly a flight i and gate k
         i = np.random.randint(0, self.prob.n)
@@ -212,45 +209,18 @@ class TabuSearch:
                 or earliest_end_int_2 > latest_end_gap_1:
             return s, c, False
         else:
-            # Todo maybe optimize: fitting_test return also c in order to avoid calculating it again with shift_interval
-            succ_1, start_1 = self.fitting_test(earliest_start_gap_1, latest_end_gap_1,
-                                                c_new, sched_2[loc_i_2:loc_j_2 + 1])
-            succ_2, start_2 = self.fitting_test(earliest_start_gap_2, latest_end_gap_2,
-                                                c_new, sched_1[loc_i_1:loc_j_1 + 1])
-            if succ_1 and succ_2:
-                c_new = self.shift_interval(s_new, c_new, k_1, loc_i_1, loc_j_1, start_2)
-                c_new = self.shift_interval(s_new, c_new, k_2, loc_i_2, loc_j_2, start_1)
+            result_1 = self.attempt_shift_interval(s_new, c_new, k_1, loc_i_1, loc_j_1, earliest_start_gap_2)
+            result_2 = self.attempt_shift_interval(s_new, c_new, k_2, loc_i_2, loc_j_2, earliest_start_gap_1)
+            if result_1 <= latest_end_gap_2 and result_2 <= latest_end_gap_1:
+                c_new = self.shift_interval(s_new, c_new, k_1, loc_i_1, loc_j_1, earliest_start_gap_2)
+                c_new = self.shift_interval(s_new, c_new, k_2, loc_i_2, loc_j_2, earliest_start_gap_1)
                 s_new[sched_1[loc_i_1:loc_j_1 + 1]] = k_2
                 s_new[sched_2[loc_i_2:loc_j_2 + 1]] = k_1
                 return s_new, c_new, True
             else:
                 return s, c, False
 
-    #_________________________________________________________________________________________________
     # Sub-routines
-
-    # assumption that start >= a
-    def fitting_test(self, start, end, c, sched_slice):
-        c_new = c.copy()
-        for x, y in enumerate(sched_slice, 0):
-            if x == 0:
-                c_new[y] = start
-            else:
-                c_new[y] = np.maximum(self.prob.a[y],
-                                      c_new[sched_slice[x - 1]] + self.prob.d[sched_slice[x - 1]])
-                if c_new[y] + self.prob.d[y] > self.prob.b[y]:
-                    return False, 0
-        if c_new[sched_slice[sched_slice.size - 1]] + self.prob.d[sched_slice[sched_slice.size - 1]] > end:
-            return False, 0
-
-        # todo optimize
-        """ possibly faster way to test validity (not tested)
-        infeas = np.greater(self.prob.c_new[sched_slice] + self.prob.d[sched_slice], self.prob.b[sched_slice])
-        if (True in infeas 
-                or c_new[sched_slice[sched_slice.size-1]] + self.prob.d[sched_slice[sched_slice.size-1]] > end):
-            return False, 0
-        """
-        return True, c_new[sched_slice[0]]
 
     def shift_left(self, s, c, k, i):
         idx, = np.nonzero(s == k)
@@ -280,16 +250,6 @@ class TabuSearch:
             c_temp[y] = c_new
         return c_temp[sched[i]]
 
-    def attempt_shift_interval_right(self, s, c, k, i, j):
-        c_temp = c.copy()
-        idx, = np.nonzero(s == k)
-        sched = idx[np.argsort(c_temp[idx])]
-        for x, y in enumerate(sched[i:j + 1][::-1]):
-            c_new = self.prob.b[y] - self.prob.d[y] if x == 0 and j == sched.size - 1\
-                else np.minimum(self.prob.b[y], c_temp[sched[j - x + 1]]) - self.prob.d[y]
-            c_temp[y] = c_new
-        return c_temp[sched[i]]
-
     def shift_interval(self, s, c, k, i, j, t):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
@@ -307,5 +267,15 @@ class TabuSearch:
             c_new = np.maximum(c[y], t) if x == i \
                 else np.maximum(c_temp[y], c_temp[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c_temp[y] = c_new
-        return c[j] + self.prob.d[j]
+        return c_temp[sched[j]] + self.prob.d[sched[j]]
+
+    def attempt_shift_interval_right(self, s, c, k, i, j):
+        c_temp = c.copy()
+        idx, = np.nonzero(s == k)
+        sched = idx[np.argsort(c_temp[idx])]
+        for x, y in enumerate(sched[i:j + 1][::-1]):
+            c_new = self.prob.b[y] - self.prob.d[y] if x == 0 and j == sched.size - 1\
+                else np.minimum(self.prob.b[y], c_temp[sched[j - x + 1]]) - self.prob.d[y]
+            c_temp[y] = c_new
+        return c_temp[sched[i]]
 
