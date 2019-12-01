@@ -50,10 +50,6 @@ class TabuSearch:
         count_term = 0
         count_tabu = 0
         for count_iter in range(self.n_iter):
-
-            #print(str(count_iter) + " TS global best solution: " + str(self.best_obj))
-            #print(str(count_iter) + " TS local best solution: " + str(curr_obj))
-
             # terminal condition
             if count_term >= self.n_term:
                 break
@@ -75,14 +71,17 @@ class TabuSearch:
                         self.neigh_obj[count_neigh] = self.calculate_objective_value(s, c)
                         count_neigh += 1
             top = np.argmin(self.neigh_obj)
-
-            #print("top neighbour: " + str(self.neigh_obj[top]))
-
-            if (self.tabu_tenure == self.neigh[top]).any==False or self.neigh_obj[top] < self.best_obj:
+            count_curr = 0
+            # assuring that one neighbour is choosen if possible
+            while (np.any((np.equal(self.tabu_tenure, self.neigh[top]).all(1)))
+                   and self.neigh_obj[top] >= self.best_obj):
+                if (count_curr >= self.n_neigh): break
+                self.neigh_obj[top] = np.inf
+                top = np.argmin(self.neigh_obj)
+                count_curr += 1
+            if (np.any((np.equal(self.tabu_tenure, self.neigh[top]).all(1)))==False
+                    or self.neigh_obj[top] < self.best_obj):
                 curr = self.neigh.copy()[top]
-
-                #print("neigh top: " + str(self.neigh[top]))
-
                 curr_c = self.neigh_c.copy()[top]
                 curr_obj = self.neigh_obj.copy()[top]
                 if self.neigh_obj[top] < self.best_obj:
@@ -91,17 +90,12 @@ class TabuSearch:
                     self.best_obj = curr_obj.copy()
 
                     print(str(count_iter) + " TS global best solution: " + str(self.best_obj))
-                    #gantt.create_gantt(self.prob, self.best, self.best_c)
 
                     count_term = 0
             else:
                 count_term +=1
-
             self.tabu_tenure[count_tabu % self.n_tabu_tenure] = curr
             count_tabu += 1
-
-            #print("Tabu: " + str(self.tabu_tenure))
-
         return self.best
 
     def create_initial_solution(self):
@@ -227,7 +221,7 @@ class TabuSearch:
             return s, c, False
         else:
             # fitting test
-            #todo optimize double running for same function
+            #todo maybe optimize: fitting_test return also c in order to avoid calculating it again with shift_interval
             succ_1, start_1 = self.fitting_test(earliest_start_gap_1, latest_end_gap_1,
                                                 c_new, sched_2[loc_i_2:(loc_j_2+1)])
             succ_2, start_2 = self.fitting_test(earliest_start_gap_2, latest_end_gap_2,
@@ -259,15 +253,13 @@ class TabuSearch:
             return False, 0
 
         # todo optimize
-        """ faster way to test validity (not tested)
+        """ possibly faster way to test validity (not tested)
         infeas = np.greater(self.prob.c_new[sched_slice] + self.prob.d[sched_slice], self.prob.b[sched_slice])
         if (True in infeas 
                 or c_new[sched_slice[sched_slice.size-1]] + self.prob.d[sched_slice[sched_slice.size-1]] > end):
             return False, 0
         """
         return True, c_new[sched_slice[0]]
-
-
 
     def shift_left(self, s_old, c_old, k, i):
         c = np.copy(c_old)

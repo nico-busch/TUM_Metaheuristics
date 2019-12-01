@@ -10,7 +10,6 @@ m = 3
 prob = Problem(n, m)
 
 
-
 # Gurobi
 print("___________________________________________________________________________________")
 print ("Gurobi")
@@ -34,24 +33,3 @@ while (sol == None):
     sol = ts.solve()
 print("time: ", timeit.default_timer() - start_time)
 print("___________________________________________________________________________________")
-
-
-
-
-#_________________________________________________________________________________________
-
-"""
-
-    while(sol == None):
-    prob = Problem(12, 3)
-    start_time = timeit.default_timer()
-    ts = TabuSearch(prob)
-    sol = ts.solve()
-    
-    """
-
-#print("Problem Data")
-#print("a: " + str(prob.a))
-#print("b: " + str(prob.b))
-#print("d: " + str(prob.d))
-#print("p: " + str(prob.p))
