@@ -4,8 +4,12 @@ from tabu_neu import TabuSearch
 import numpy as np
 from gurobi import Gurobi
 
-prob = Problem(12, 3)
-"""
+n = 12
+m = 3
+
+prob = Problem(n, m)
+
+
 # Gurobi
 print("___________________________________________________________________________________")
 print ("Gurobi")
@@ -14,7 +18,7 @@ sol = Gurobi(prob)
 sol.solve()
 print("time: ", timeit.default_timer() - start_time)
 print("___________________________________________________________________________________")
-"""
+
 
 
 print("___________________________________________________________________________________")
@@ -23,7 +27,7 @@ start_time = timeit.default_timer()
 ts = TabuSearch(prob)
 sol = ts.solve()
 while (sol == None):
-    prob = Problem(12, 3)
+    prob = Problem(n, m)
     start_time = timeit.default_timer()
     ts = TabuSearch(prob)
     sol = ts.solve()

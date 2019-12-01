@@ -52,7 +52,7 @@ class TabuSearch:
         for count_iter in range(self.n_iter):
 
             #print(str(count_iter) + " TS global best solution: " + str(self.best_obj))
-            print(str(count_iter) + " TS local best solution: " + str(curr_obj))
+            #print(str(count_iter) + " TS local best solution: " + str(curr_obj))
 
             # terminal condition
             if count_term >= self.n_term:
@@ -67,13 +67,6 @@ class TabuSearch:
                         self.neigh_c[count_neigh] = c
                         self.neigh_obj[count_neigh] = self.calculate_objective_value(s, c)
                         count_neigh += 1
-
-                        arr = np.greater(self.prob.a, self.neigh_c[count_neigh - 1])
-                        if (True in arr):
-                            print("insert c: " + str(self.neigh_c[count_neigh-1]))
-                            print("insert A: " + str(self.prob.a))
-                            exit()
-
                 else:
                     s, c, successful = self.interval_exchange(curr, curr_c)
                     if successful:
@@ -81,13 +74,6 @@ class TabuSearch:
                         self.neigh_c[count_neigh] = c
                         self.neigh_obj[count_neigh] = self.calculate_objective_value(s, c)
                         count_neigh += 1
-
-                        arr = np.greater(self.prob.a, self.neigh_c[count_neigh - 1])
-                        if (True in arr):
-                            print("interval c: " + str(self.neigh_c[count_neigh - 1]))
-                            print("interval a: " + str(self.prob.a))
-                            exit()
-
             top = np.argmin(self.neigh_obj)
 
             #print("top neighbour: " + str(self.neigh_obj[top]))
@@ -103,6 +89,10 @@ class TabuSearch:
                     self.best = curr.copy()
                     self.best_c = curr_c.copy()
                     self.best_obj = curr_obj.copy()
+
+                    print(str(count_iter) + " TS global best solution: " + str(self.best_obj))
+                    #gantt.create_gantt(self.prob, self.best, self.best_c)
+
                     count_term = 0
             else:
                 count_term +=1
@@ -135,7 +125,6 @@ class TabuSearch:
                     x += 1
             if not successful:
                 return s, None
-        gantt.create_gantt(self.prob, s_new, c)
         return s_new, c
 
     def calculate_objective_value(self, s, c):
@@ -146,17 +135,6 @@ class TabuSearch:
                                       * x[:, np.newaxis, :]
                                       * self.prob.f[:, :, np.newaxis, np.newaxis]
                                       * self.prob.w)
-
-        # Control-Check
-        # todo delete if not necessary anymore
-        if(sum_delay_penalty < 0):
-            print("ERROR: c > a")
-            exit()
-
-        #print("sum_delay: " + str(sum_delay_penalty))
-        #print("sum_waling: " + str(sum_walking_distance))
-        #print("obj: " + str(sum_delay_penalty + sum_walking_distance))
-
         return sum_delay_penalty + sum_walking_distance
 
     #_________________________________________________________________________________________________
@@ -164,8 +142,8 @@ class TabuSearch:
 
     # todo possibly optimizable
     def insert(self, s, c):
-        s_new = np.copy(s)
-        c_new = np.copy(c)
+        s_new = s.copy()
+        c_new = c.copy()
         # Choose randomly a flight i and gate k
         i = np.random.randint(0, self.prob.n)
         k = s[i]
@@ -177,33 +155,28 @@ class TabuSearch:
             s_new[i] = k_new
             return s_new, c_new, True
         successful = False
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c_new, decimals=1))
-        if (True in arr):
-            print("BEFORE")
-            print("insert c: " + str(c))
-            print("insert A: " + str(self.prob.a))
-            exit()
-
-        for x, y in enumerate(sched_new):
-            if(c_new[x] + self.prob.d[x] > self.prob.a[i]):
-                t_1 = self.prob.a[i] if x == 0 else np.maximum(c_new[sched_new[x - 1]] + self.prob.d[sched_new[x - 1]], self.prob.a[y])
-                t_2 = np.inf if x == sched_new.size - 1 else self.attempt_shift_right(s_new, c_new, k_new, x)
+        for x, y in enumerate(sched_new, 0):
+            if(c_new[y] + self.prob.d[y] > self.prob.a[i]):
+                t_1 = self.prob.a[i] if x == 0 \
+                    else np.maximum(c_new[sched_new[x - 1]] + self.prob.d[sched_new[x - 1]], self.prob.a[i])
+                t_2 = np.minimum(self.prob.b[i], self.prob.b[y] - self.prob.d[y]) if x == sched_new.size - 1 \
+                    else np.minimum(self.attempt_shift_right(s_new, c_new, k_new, x), self.prob.b[i])
                 if t_2 - t_1 >= self.prob.d[i] and t_1 >= self.prob.a[i]:
                     c_new = self.shift_right(s_new, c_new, k_new, x, t_1 + self.prob.d[i])
                     c_new[i] = t_1
                     s_new[i] = k_new
+                    #todo optimize 0
                     c_new = self.shift_left(s_new, c_new, k, 0)
                     successful = True
                     break
-
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c_new, decimals=1))
-        if (True in arr):
-            print("insert c: " + str(c_new))
-            print("insert A: " + str(self.prob.a))
-            exit()
-
+                if(t_1>=self.prob.b[i]): break
+                # special case last flight in sequence
+                if(x==sched_new.size - 1 and self.prob.b[i]-self.prob.d[i] >= c_new[y]+self.prob.d[y]):
+                    c_new[i] = c_new[y]+self.prob.d[y]
+                    s_new[i] = k_new
+                    # todo optimize 0 with location
+                    c_new = self.shift_left(s_new, c_new, k, 0)
+                    successful = True
         return s_new, c_new, successful
 
     def interval_exchange(self, s, c):
@@ -222,13 +195,6 @@ class TabuSearch:
         loc_j_1 = np.random.randint(loc_i_1, sched_1.size)
         j_1 = sched_1[loc_j_1]
 
-        t_11 = self.prob.a[i_1] if loc_i_1 == 0 else c_new[sched_1[loc_i_1 - 1]] + self.prob.d[sched_1[loc_i_1 - 1]]
-        t_12 = np.inf if loc_j_1 == sched_1.size - 1 else self.attempt_shift_right(s, c, k_1, loc_j_1 + 1)
-        t_13 = c_new[i_1]
-        t_14 = c_new[j_1] + self.prob.d[j_1]
-        t_15 = self.attempt_shift_interval_right(s_new, c_new, k_1, loc_i_1, loc_j_1)
-        t_16 = self.prob.b[j_1]
-
         idx_2, = np.nonzero(s_new == k_2)
         sched_2 = idx_2[np.argsort(c_new[idx_2])]
         if(sched_2.size == 0):
@@ -238,107 +204,92 @@ class TabuSearch:
         loc_j_2 = np.random.randint(loc_i_2, sched_2.size)
         j_2 = sched_2[loc_j_2]
 
-        t_21 = self.prob.a[i_2] if loc_i_2 == 0 else c_new[sched_2[loc_i_2 - 1]] + self.prob.d[sched_2[loc_i_2 - 1]]
-        t_22 = np.inf if loc_j_2 == sched_2.size - 1 else self.attempt_shift_right(s_new, c_new, k_2, loc_j_2 + 1)
-        t_23 = c_new[i_2]
-        t_24 = c_new[j_2] + self.prob.d[j_2]
-        t_25 = self.attempt_shift_interval_right(s_new, c_new, k_2, loc_i_2, loc_j_2)
-        t_26 = self.prob.b[j_2]
-
-        if t_21 <= t_15 and t_11 <= t_25 and t_12 >= t_24 and t_22 >= t_14:
-
-            result_1 = self.attempt_shift_interval(s_new, c_new, k_1, loc_i_1, loc_j_1, t_21)
-            result_2 = self.attempt_shift_interval(s_new, c_new, k_2, loc_i_2, loc_j_2, t_11)
-
-            if result_1 <= t_22 and result_2 <= t_12:
-
-                arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c_new, decimals=1))
-                if (True in arr):
-                    print("BEFORE")
-                    print("int c: " + str(c))
-                    print("int A: " + str(self.prob.a))
-                    exit()
-
-                c_new = self.shift_interval(s_new, c_new, k_1, loc_i_1, loc_j_1, t_21)
-                c_new = self.shift_interval(s_new, c_new, k_2, loc_i_2, loc_j_2, t_11)
-                s_new[sched_1[loc_i_1:(loc_j_1+1)]] = k_2
-                s_new[sched_2[loc_i_2:(loc_j_2+1)]] = k_1
-
-                arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c_new, decimals=1))
-                if (True in arr):
-                    print("int c: " + str(c))
-                    print("int A: " + str(self.prob.a))
-                    exit()
-
-
+        # calculation of max gap sizes and min interval sizes
+        latest_start_int_1 = self.attempt_shift_interval_right(s_new, c_new, k_1, loc_i_1, loc_j_1)
+        latest_start_int_2 = self.attempt_shift_interval_right(s_new, c_new, k_2, loc_i_2, loc_j_2)
+        earliest_end_int_1 = c_new[j_1]+self.prob.d[j_1]
+        earliest_end_int_2 = c_new[j_2] + self.prob.d[j_2]
+        earliest_start_gap_1 = self.prob.a[i_2] if loc_i_1 == 0 else np.maximum(self.prob.a[i_2],
+                                                                                c_new[sched_1[loc_i_1 - 1]] +
+                                                                                self.prob.d[sched_1[loc_i_1 - 1]])
+        earliest_start_gap_2 = self.prob.a[i_1] if loc_i_2 == 0 else np.maximum(self.prob.a[i_1],
+                                                                                c_new[sched_2[loc_i_2-1]] +
+                                                                                self.prob.d[sched_2[loc_i_2-1]])
+        latest_end_gap_1 = self.prob.b[j_2] if loc_j_1 == sched_1.size - 1 else np.minimum(self.prob.b[j_2],
+                                                                                c_new[sched_1[loc_j_1+1]])
+        latest_end_gap_2 = self.prob.b[j_1] if loc_j_2 == sched_2.size - 1 else np.minimum(self.prob.b[j_1],
+                                                                                c_new[sched_2[loc_j_2 + 1]])
+        # general infeasibility check
+        if(earliest_start_gap_1 > latest_start_int_2
+                or earliest_start_gap_2 > latest_start_int_1
+                or earliest_end_int_1 > latest_end_gap_2
+                or earliest_end_int_2 > latest_end_gap_1):
+            return s, c, False
+        else:
+            # fitting test
+            #todo optimize double running for same function
+            succ_1, start_1 = self.fitting_test(earliest_start_gap_1, latest_end_gap_1,
+                                                c_new, sched_2[loc_i_2:(loc_j_2+1)])
+            succ_2, start_2 = self.fitting_test(earliest_start_gap_2, latest_end_gap_2,
+                                                c_new, sched_1[loc_i_1:(loc_j_1 + 1)])
+            if(succ_1 and succ_2):
+                c_new = self.shift_interval(s_new, c_new, k_1, loc_i_1, loc_j_1, start_2)
+                c_new = self.shift_interval(s_new, c_new, k_2, loc_i_2, loc_j_2, start_1)
+                s_new[sched_1[loc_i_1:(loc_j_1 + 1)]] = k_2
+                s_new[sched_2[loc_i_2:(loc_j_2 + 1)]] = k_1
                 return s_new, c_new, True
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c_new, decimals=1))
-        if (True in arr):
-            print("int c: " + str(c))
-            print("int A: " + str(self.prob.a))
-            exit()
-
-        return s, c, False
+            else:
+                return s, c, False
 
     #_________________________________________________________________________________________________
     # Sub-routines
 
+    # assumption that start >= a
+    def fitting_test(self, start, end, c, sched_slice):
+        c_new = c.copy()
+        for x, y in enumerate(sched_slice, 0):
+            if(x==0):
+                c_new[y] = start
+            else:
+                c_new[y] = np.maximum(self.prob.a[y],
+                                      c_new[sched_slice[x-1]] + self.prob.d[sched_slice[x-1]])
+                if(c_new[y]+self.prob.d[y] > self.prob.b[y]):
+                    return False, 0
+        if(c_new[sched_slice[sched_slice.size-1]] + self.prob.d[sched_slice[sched_slice.size-1]] > end):
+            return False, 0
+
+        # todo optimize
+        """ faster way to test validity (not tested)
+        infeas = np.greater(self.prob.c_new[sched_slice] + self.prob.d[sched_slice], self.prob.b[sched_slice])
+        if (True in infeas 
+                or c_new[sched_slice[sched_slice.size-1]] + self.prob.d[sched_slice[sched_slice.size-1]] > end):
+            return False, 0
+        """
+        return True, c_new[sched_slice[0]]
+
+
+
     def shift_left(self, s_old, c_old, k, i):
         c = np.copy(c_old)
         s = np.copy(s_old)
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("BEFORE")
-            print("shift left c: " + str(c))
-            print("shift left A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched[i:], i):
-
             if(x==0):
                 c[y] = self.prob.a[y]
             else:
                 c[y] = np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("shift left c: " + str(c))
-            print("shift left A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         return c
 
     def shift_right(self, s_old, c_old, k, i, t):
         c = np.copy(c_old)
         s = np.copy(s_old)
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("BEFORE")
-            print("shift right c: " + str(c))
-            print("shift right A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched[i:], i):
-            c_new = np.maximum(t, self.prob.a[sched[i]]) if x == i else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
+            c_new = np.maximum(t, self.prob.a[sched[i]]) if x == i \
+                else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("shift right c: " + str(c))
-            print("shift right A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         return c
 
     # todo possibly optimizable
@@ -348,29 +299,11 @@ class TabuSearch:
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         sched_revers = sched[i:][::-1]
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("BEFORE")
-            print("att shift right c: " + str(c[arr]))
-            print("att shift right A: " + str(self.prob.a[arr]))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         for x, y in enumerate(sched_revers, 0):
-
             if x==0:
-                c[sched_revers[x]] = self.prob.b[sched_revers[x]] - self.prob.d[sched_revers[x]]
+                c[y] = self.prob.b[y] - self.prob.d[y]
             else:
-                c[sched_revers[x]] = np.minimum(self.prob.b[sched_revers[x]], c[sched[sched.size-x]]) - self.prob.d[sched_revers[x]]
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("att shift right c: " + str(c[arr]))
-            print("att shift right A: " + str(self.prob.a[arr]))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
+                c[y] = np.minimum(self.prob.b[y], c[sched[sched.size-x]]) - self.prob.d[y]
         return c[sched[i]]
 
     # todo possibly optimizable
@@ -380,34 +313,11 @@ class TabuSearch:
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         sched_revers = sched[i:(j+1)][::-1]
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("BEFORE")
-            print("att shift int right c: " + str(c))
-            print("att shift int right A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         for x, y in enumerate(sched_revers, 0):
             if x==0 and j==(sched.size-1):
                 c[sched_revers[x]] = self.prob.b[sched_revers[x]] - self.prob.d[sched_revers[x]]
             else:
                 c[sched_revers[x]] = np.minimum(self.prob.b[sched_revers[x]], c[sched[j-x+1]]) - self.prob.d[sched_revers[x]]
-                if(np.around(self.prob.a[sched_revers[x]], decimals=1) > np.around(c[sched_revers[x]], decimals=1)):
-                    print("MIDDLE att shift int right a > c")
-                    print("att shift int right c: " + str(c))
-                    print("att shift int right A: " + str(self.prob.a))
-                    gantt.create_gantt(self.prob, s, c)
-                    exit()
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("att shift int right c: " + str(c))
-            print("att shift int right A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         return c[sched[i]]
 
     def shift_interval(self, s_old, c_old, k, i, j, t):
@@ -415,27 +325,9 @@ class TabuSearch:
         s = s_old.copy()
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("BEFORE")
-            print("shift int c: " + str(c))
-            print("shift int A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         for x, y in enumerate(sched[i:(j+1)], i):
             c_new = np.maximum(t, self.prob.a[sched[x]]) if x == i else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
-
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("shift int c: " + str(c))
-            print("shift int A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         return c
 
     def attempt_shift_interval(self, s_old, c_old, k, i, j, t):
@@ -443,24 +335,8 @@ class TabuSearch:
         s = s_old.copy()
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("BEFORE")
-            print("att shift int c: " + str(c))
-            print("att shift int A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         for x, y in enumerate(sched[i:(j+1)], i):
-            c_new = np.maximum(t, self.prob.a[sched[x]]) if x == i else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
+            c_new = np.maximum(t, self.prob.a[sched[x]]) if x == i \
+                else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
-
-        arr = np.greater(np.around(self.prob.a, decimals=1), np.around(c, decimals=1))
-        if (True in arr):
-            print("att shift int c: " + str(c))
-            print("att shift int A: " + str(self.prob.a))
-            gantt.create_gantt(self.prob, s, c)
-            exit()
-
         return c[sched[j]] + self.prob.d[sched[j]]
