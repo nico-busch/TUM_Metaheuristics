@@ -106,11 +106,10 @@ class GeneticAlgorithm:
                 self.best = pop[best_idx]
                 self.best_c = pop_c[best_idx]
                 self.best_obj = pop_obj[best_idx]
+                print('{:<10}{:>10.4f}'.format(x + 1, self.best_obj))
                 count_term = 0
             else:
                 count_term += 1
-
-            print('{:<10}{:>10.4f}'.format(x + 1, self.best_obj))
 
         return self.best_obj
 

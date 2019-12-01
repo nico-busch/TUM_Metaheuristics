@@ -1,6 +1,6 @@
 import timeit
 from problem import Problem
-from tabu_neu import TabuSearch
+from tabusearch import TabuSearch
 import numpy as np
 from gurobi import Gurobi
 

@@ -85,10 +85,9 @@ class BeeColony:
                 self.best_c = bees_c[best_idx]
                 self.best_obj = bees_obj[best_idx]
                 count_term = 0
+                print('{:<10}{:>10.4f}'.format(x + 1, self.best_obj))
             else:
                 count_term += 1
-
-            print('{:<10}{:>10.4f}'.format(x + 1, self.best_obj))
 
         return self.best_obj
 
