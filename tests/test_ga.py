@@ -6,22 +6,27 @@ from beecolony import BeeColony
 from gurobi import Gurobi
 import gantt
 
+prob = Problem(20, 5)
 
-prob = Problem(12, 3)
+start_time = timeit.default_timer()
+ga = GeneticAlgorithm(prob)
+sol = ga.solve()
+print("time: ", timeit.default_timer() - start_time)
+
+if sol is not None:
+    gantt.create_gantt(prob, ga.best, ga.best_c)
 
 start_time = timeit.default_timer()
 bc = BeeColony(prob)
-bc.solve()
+sol = bc.solve()
 print("time: ", timeit.default_timer() - start_time)
 
-if bc.best_obj is not None:
+if sol is not None:
+    print(bc.best_obj)
     gantt.create_gantt(prob, bc.best, bc.best_c)
 
-# start_time = timeit.default_timer()
-# ga = GeneticAlgorithm(prob)
-# ga.solve()
-# print("time: ", timeit.default_timer() - start_time)
-# #
-# if ga.best_obj is not None:
-#     gantt.create_gantt(prob, ga.best, ga.best_c)
+start_time = timeit.default_timer()
+gu = Gurobi(prob)
+sol = gu.solve()
+print("time: ", timeit.default_timer() - start_time)
 
