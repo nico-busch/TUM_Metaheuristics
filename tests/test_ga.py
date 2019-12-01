@@ -1,12 +1,20 @@
 import timeit
+import numpy as np
 
 from problem import Problem
+from tabu_neu import TabuSearch
 from geneticalgorithm import GeneticAlgorithm
 from beecolony import BeeColony
 from gurobi import Gurobi
 import gantt
 
+np.random.seed(1)
 prob = Problem(20, 5)
+
+start_time = timeit.default_timer()
+ts = TabuSearch(prob)
+sol = ts.solve()
+print("time: ", timeit.default_timer() - start_time)
 
 start_time = timeit.default_timer()
 ga = GeneticAlgorithm(prob)

@@ -43,9 +43,9 @@ class GeneticAlgorithm:
             else:
                 s, c = self.generate_solution(
                     np.random.randint(0, self.prob.m, [self.n_pop - pop.shape[0], self.prob.n]))
-                count_infeasible += self.n_pop - pop.shape[0] - s.shape[0]
                 pop = np.vstack([pop, s])
                 pop_c = np.vstack([pop_c, c])
+                count_infeasible += self.n_pop - pop.shape[0]
         pop_obj = self.calculate_objective_value(pop, pop_c)
 
         # Find the initial best solution

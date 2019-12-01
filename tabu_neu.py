@@ -4,7 +4,7 @@ import gantt
 
 class TabuSearch:
 
-    def __init__(self, prob, n_iter=10**5, n_neigh=100, n_tabu_tenure=10, n_term=10**4):
+    def __init__(self, prob, n_iter=10**5, n_neigh=10, n_tabu_tenure=10, n_term=10**4):
 
         # parameters
         self.n_iter = n_iter
@@ -32,19 +32,19 @@ class TabuSearch:
     def solve(self):
 
         # create initial solution
-        count_feas = 0
+        count_infeasible = 0
         while self.best_c is None:
-            if count_feas > 10000:
+            if count_infeasible >= 10000:
                 print("Greedy heuristic cannot find feasible solution")
                 return None
-            self.best, self.best_c = self.create_initial_solution()
-            count_feas += 1
-        self.best_obj = self.calculate_objective_value(self.best, self.best_c)
+            self.best, self.best_c = self.create_solution()
+            count_infeasible += 1
+        self.best_obj = self.calculate_objective_value(self.best[np.newaxis, :], self.best_c[np.newaxis, :])
 
         # local best solution
-        curr = np.copy(self.best)
-        curr_c = np.copy(self.best_c)
-        curr_obj = np.copy(self.best_obj)
+        curr = self.best.copy()
+        curr_c = self.best_c.copy()
+        curr_obj = self.best_obj.copy()
 
         # Generate set of neighborhood solutions
         count_term = 0
@@ -61,74 +61,58 @@ class TabuSearch:
                     if successful:
                         self.neigh[count_neigh] = s
                         self.neigh_c[count_neigh] = c
-                        self.neigh_obj[count_neigh] = self.calculate_objective_value(s, c)
                         count_neigh += 1
                 else:
                     s, c, successful = self.interval_exchange(curr, curr_c)
                     if successful:
                         self.neigh[count_neigh] = s
                         self.neigh_c[count_neigh] = c
-                        self.neigh_obj[count_neigh] = self.calculate_objective_value(s, c)
                         count_neigh += 1
-            top = np.argmin(self.neigh_obj)
-            count_curr = 0
-            # assuring that one neighbour is choosen if possible
-            while (np.any((np.equal(self.tabu_tenure, self.neigh[top]).all(1)))
-                   and self.neigh_obj[top] >= self.best_obj):
-                if (count_curr >= self.n_neigh): break
-                self.neigh_obj[top] = np.inf
-                top = np.argmin(self.neigh_obj)
-                count_curr += 1
-            if (np.any((np.equal(self.tabu_tenure, self.neigh[top]).all(1)))==False
-                    or self.neigh_obj[top] < self.best_obj):
-                curr = self.neigh.copy()[top]
-                curr_c = self.neigh_c.copy()[top]
-                curr_obj = self.neigh_obj.copy()[top]
-                if self.neigh_obj[top] < self.best_obj:
-                    self.best = curr.copy()
-                    self.best_c = curr_c.copy()
-                    self.best_obj = curr_obj.copy()
+            self.neigh_obj = self.calculate_objective_value(self.neigh, self.neigh_c)
 
-                    print(str(count_iter) + " TS global best solution: " + str(self.best_obj))
-
-                    count_term = 0
+            top = np.argmin(self.neigh_obj[np.logical_or((self.neigh[:, np.newaxis] != self.tabu_tenure).any(-1).all(-1),
+                                                         self.neigh_obj < self.best_obj)])
+            curr = self.neigh.copy()[top]
+            curr_c = self.neigh_c.copy()[top]
+            curr_obj = self.neigh_obj.copy()[top]
+            if curr_obj < self.best_obj:
+                self.best = curr.copy()
+                self.best_c = curr_c.copy()
+                self.best_obj = curr_obj.copy()
+                count_term = 0
             else:
-                count_term +=1
+                count_term += 1
             self.tabu_tenure[count_tabu % self.n_tabu_tenure] = curr
             count_tabu += 1
+            print(str(count_iter) + " TS global best solution: " + str(self.best_obj))
+
         return self.best
 
-    def create_initial_solution(self):
-        s = np.random.randint(0, self.prob.m, self.prob.n)
-        s_new = -np.ones(self.prob.n, dtype=np.int64)
+    def create_solution(self):
+        s = -np.ones(self.prob.n, dtype=np.int64)
         c = np.zeros(self.prob.n)
         for i in self.prob.a.argsort():
-            k = s[i]
             successful = False
-            x = 0
-            while x < self.prob.m:
-                c_max = self.prob.a[i] if s_new[s_new == k].size == 0 \
-                    else np.amax(np.maximum(c + self.prob.d, self.prob.a[i])[s_new == k])
+            for k in np.roll(np.arange(self.prob.m), -np.random.randint(0, self.prob.m)):
+                c_max = self.prob.a[i] if s[s == k].size == 0 \
+                    else np.amax(np.maximum(c + self.prob.d, self.prob.a[i])[s == k])
                 if self.prob.b[i] - c_max >= self.prob.d[i]:
                     c[i] = c_max
-                    s_new[i] = k
+                    s[i] = k
                     successful = True
                     break
-                else:
-                    k = k % (self.prob.m - 1) + 1
-                    x += 1
             if not successful:
-                return s, None
-        return s_new, c
+                return None, None
+        return s, c
 
     def calculate_objective_value(self, s, c):
-        sum_delay_penalty = np.sum(self.prob.p * (c - self.prob.a))
-        x = np.zeros([self.prob.n, self.prob.m])
-        x[np.arange(self.prob.n), s] = 1
-        sum_walking_distance = np.sum(x[:, np.newaxis, :, np.newaxis]
-                                      * x[:, np.newaxis, :]
-                                      * self.prob.f[:, :, np.newaxis, np.newaxis]
-                                      * self.prob.w)
+        sum_delay_penalty = np.einsum('i,ni->n', self.prob.p, (c - self.prob.a))
+
+        x = np.zeros([s.size, self.prob.m], dtype=np.int64)
+        x[np.arange(s.size), s.ravel()] = 1
+        x.shape = s.shape + (self.prob.m,)
+        sum_walking_distance = np.einsum('nik,njl,ij,kl->n', x, x, self.prob.f, self.prob.w, optimize=True)
+
         return sum_delay_penalty + sum_walking_distance
 
     #_________________________________________________________________________________________________
