@@ -48,7 +48,6 @@ class TabuSearch:
 
         # Generate set of neighborhood solutions
         count_term = 0
-        count_tabu = 0
         for count_iter in range(self.n_iter):
             # terminal condition
             if count_term >= self.n_term:
@@ -70,6 +69,7 @@ class TabuSearch:
                         count_neigh += 1
             self.neigh_obj = self.calculate_objective_value(self.neigh, self.neigh_c)
 
+            # Condition for current solution update
             top = np.argmin(self.neigh_obj[np.logical_or((self.neigh[:, np.newaxis] != self.tabu_tenure).any(-1).all(-1),
                                                          self.neigh_obj < self.best_obj)])
             curr = self.neigh.copy()[top]
@@ -82,8 +82,11 @@ class TabuSearch:
                 count_term = 0
             else:
                 count_term += 1
-            self.tabu_tenure[count_tabu % self.n_tabu_tenure] = curr
-            count_tabu += 1
+
+            # Update memory
+            self.tabu_tenure = np.roll(self.tabu_tenure, 1, axis=0)
+            self.tabu_tenure[0] = curr
+
             print(str(count_iter) + " TS global best solution: " + str(self.best_obj))
 
         return self.best
@@ -120,41 +123,46 @@ class TabuSearch:
 
     # todo possibly optimizable
     def insert(self, s, c):
-        s_new = s.copy()
-        c_new = c.copy()
         # Choose randomly a flight i and gate k
         i = np.random.randint(0, self.prob.n)
         k = s[i]
+        idx, = np.nonzero(s == k)
+        sched = idx[np.argsort(c[idx])]
+        loc = np.nonzero(sched == i)[0][0]
+
         k_new = np.random.choice(np.setdiff1d(np.arange(self.prob.m), k))
-        idx_new, = np.nonzero(s_new == k_new)
-        sched_new = idx_new[np.argsort(c_new[idx_new])]
-        if(sched_new.size == 0):
-            c_new[i] = self.prob.a[i]
-            s_new[i] = k_new
-            return s_new, c_new, True
+        idx_new, = np.nonzero(s == k_new)
+        sched_new = idx_new[np.argsort(c[idx_new])]
+
+        s_new = s.copy()
+        c_new = c.copy()
         successful = False
-        for x, y in enumerate(sched_new, 0):
-            if(c_new[y] + self.prob.d[y] > self.prob.a[i]):
-                t_1 = self.prob.a[i] if x == 0 \
-                    else np.maximum(c_new[sched_new[x - 1]] + self.prob.d[sched_new[x - 1]], self.prob.a[i])
-                t_2 = np.minimum(self.prob.b[i], self.prob.b[y] - self.prob.d[y]) if x == sched_new.size - 1 \
-                    else np.minimum(self.attempt_shift_right(s_new, c_new, k_new, x), self.prob.b[i])
-                if t_2 - t_1 >= self.prob.d[i] and t_1 >= self.prob.a[i]:
-                    c_new = self.shift_right(s_new, c_new, k_new, x, t_1 + self.prob.d[i])
-                    c_new[i] = t_1
-                    s_new[i] = k_new
-                    #todo optimize 0
-                    c_new = self.shift_left(s_new, c_new, k, 0)
-                    successful = True
-                    break
-                if(t_1>=self.prob.b[i]): break
-                # special case last flight in sequence
-                if(x==sched_new.size - 1 and self.prob.b[i]-self.prob.d[i] >= c_new[y]+self.prob.d[y]):
-                    c_new[i] = c_new[y]+self.prob.d[y]
-                    s_new[i] = k_new
-                    # todo optimize 0 with location
-                    c_new = self.shift_left(s_new, c_new, k, 0)
-                    successful = True
+        if sched_new.size == 0:
+            s_new[i] = k_new
+            c_new[i] = self.prob.a[i]
+            successful = True
+        else:
+            for x, y in enumerate(sched_new, 0):
+                if c_new[y] + self.prob.d[y] > self.prob.a[i]:
+                    t_1 = self.prob.a[i] if x == 0 \
+                        else np.maximum(c_new[sched_new[x - 1]] + self.prob.d[sched_new[x - 1]], self.prob.a[i])
+                    t_2 = np.minimum(self.prob.b[y] - self.prob.d[y], self.prob.b[i]) if x == sched_new.size - 1 \
+                        else np.minimum(self.attempt_shift_right(s_new, c_new, k_new, x), self.prob.b[i])
+                    if t_2 - t_1 >= self.prob.d[i]:
+                        c_new = self.shift_right(s_new, c_new, k_new, x, t_1 + self.prob.d[i])
+                        c_new[i] = t_1
+                        s_new[i] = k_new
+                        c_new = self.shift_left(s_new, c_new, k, loc)
+                        successful = True
+                        break
+                    if t_1 >= self.prob.b[i]:
+                        break
+                    # special case last flight in sequence
+                    if x == sched_new.size - 1 and self.prob.b[i] - self.prob.d[i] >= c_new[y] + self.prob.d[y]:
+                        c_new[i] = c_new[y] + self.prob.d[y]
+                        s_new[i] = k_new
+                        c_new = self.shift_left(s_new, c_new, k, loc)
+                        successful = True
         return s_new, c_new, successful
 
     def interval_exchange(self, s, c):
@@ -245,42 +253,33 @@ class TabuSearch:
         """
         return True, c_new[sched_slice[0]]
 
-    def shift_left(self, s_old, c_old, k, i):
-        c = np.copy(c_old)
-        s = np.copy(s_old)
+    def shift_left(self, s, c, k, i):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched[i:], i):
-            if(x==0):
-                c[y] = self.prob.a[y]
-            else:
-                c[y] = np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
-        return c
-
-    def shift_right(self, s_old, c_old, k, i, t):
-        c = np.copy(c_old)
-        s = np.copy(s_old)
-        idx, = np.nonzero(s == k)
-        sched = idx[np.argsort(c[idx])]
-        for x, y in enumerate(sched[i:], i):
-            c_new = np.maximum(t, self.prob.a[sched[i]]) if x == i \
+            c_new = self.prob.a[y] if x == 0 \
                 else np.maximum(self.prob.a[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
         return c
 
-    # todo possibly optimizable
-    def attempt_shift_right(self, s_old, c_old, k, i):
-        c = c_old.copy()
-        s = s_old.copy()
+    def shift_right(self, s, c, k, i, t):
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
-        sched_revers = sched[i:][::-1]
-        for x, y in enumerate(sched_revers, 0):
-            if x==0:
-                c[y] = self.prob.b[y] - self.prob.d[y]
-            else:
-                c[y] = np.minimum(self.prob.b[y], c[sched[sched.size-x]]) - self.prob.d[y]
-        return c[sched[i]]
+        for x, y in enumerate(sched[i:], i):
+            c_new = np.maximum(c[y], t) if x == i \
+                else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
+            c[y] = c_new
+        return c
+
+    def attempt_shift_right(self, s, c, k, i):
+        c_temp = c.copy()
+        idx, = np.nonzero(s == k)
+        sched = idx[np.argsort(c_temp[idx])]
+        for x, y in enumerate(sched[i:][::-1]):
+            c_new = self.prob.b[y] - self.prob.d[y] if x == 0 \
+                else np.minimum(self.prob.b[y], c_temp[sched[sched.size - x]]) - self.prob.d[y]
+            c_temp[y] = c_new
+        return c_temp[sched[i]]
 
     # todo possibly optimizable
     def attempt_shift_interval_right(self, s_old, c_old, k, i, j):
