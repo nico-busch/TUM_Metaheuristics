@@ -167,8 +167,7 @@ class TabuSearch:
                 if c[y] + self.prob.d[y] > self.prob.a[i]:
                     t_1 = self.prob.a[i] if x == 0 \
                         else np.maximum(c[sched_new[x - 1]] + self.prob.d[sched_new[x - 1]], self.prob.a[i])
-                    t_2 = np.minimum(self.prob.b[y] - self.prob.d[y], self.prob.b[i]) if x == sched_new.size - 1 \
-                        else np.minimum(self.attempt_shift_right(s, c, k_new, x), self.prob.b[i])
+                    t_2 = np.minimum(self.attempt_shift_right(s, c, k_new, x), self.prob.b[i])
                     if t_2 - t_1 >= self.prob.d[i]:
                         c_new = self.shift_right(s_new, c_new, k_new, x, t_1 + self.prob.d[i])
                         c_new[i] = t_1
@@ -240,6 +239,8 @@ class TabuSearch:
                 c_new = self.shift_interval(s_new, c_new, k_2, loc_i_2, loc_j_2, earliest_start_gap_1)
                 s_new[sched_1[loc_i_1:loc_j_1 + 1]] = k_2
                 s_new[sched_2[loc_i_2:loc_j_2 + 1]] = k_1
+                c_new = self.shift_left(s_new, c_new, k_1, 0)
+                c_new = self.shift_left(s_new, c_new, k_2, 0)
                 return s_new, c_new, True
             else:
                 return s, c, False
