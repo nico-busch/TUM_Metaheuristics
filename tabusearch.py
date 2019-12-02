@@ -71,7 +71,7 @@ class TabuSearch:
                 break
             count_neigh = 0
             while count_neigh < self.n_neigh:
-                move = np.random.choice([True, False])
+                move = np.random.rand() >= 0.5
                 if move:
                     s, c, successful = self.insert(curr, curr_c)
                     if successful:
@@ -193,18 +193,16 @@ class TabuSearch:
         sched_1 = idx_1[np.argsort(c[idx_1])]
         if sched_1.size == 0:
             return s, c, False
-        loc_i_1 = np.random.randint(0, sched_1.size)
+        loc_i_1, loc_j_1 = np.sort(np.random.randint(sched_1.size, size=2))
         i_1 = sched_1[loc_i_1]
-        loc_j_1 = np.random.randint(loc_i_1, sched_1.size)
         j_1 = sched_1[loc_j_1]
 
         idx_2, = np.nonzero(s == k_2)
         sched_2 = idx_2[np.argsort(c[idx_2])]
         if sched_2.size == 0:
             return s, c, False
-        loc_i_2 = np.random.randint(0, sched_2.size)
+        loc_i_2, loc_j_2 = np.sort(np.random.randint(sched_2.size, size=2))
         i_2 = sched_2[loc_i_2]
-        loc_j_2 = np.random.randint(loc_i_2, sched_2.size)
         j_2 = sched_2[loc_j_2]
 
         # calculation of max gap sizes and min interval sizes
