@@ -1,5 +1,6 @@
 import numpy as np
 import timeit
+import gantt
 
 
 class TabuSearch:
@@ -276,8 +277,7 @@ class TabuSearch:
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c[idx])]
         for x, y in enumerate(sched[i:j + 1], i):
-            c_new = np.maximum(c[y], t) if x == i \
-                else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
+            c_new = t if x == i else np.maximum(c[y], c[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c[y] = c_new
         return c
 
@@ -286,8 +286,7 @@ class TabuSearch:
         idx, = np.nonzero(s == k)
         sched = idx[np.argsort(c_temp[idx])]
         for x, y in enumerate(sched[i:j + 1], i):
-            c_new = np.maximum(c[y], t) if x == i \
-                else np.maximum(c_temp[y], c_temp[sched[x - 1]] + self.prob.d[sched[x - 1]])
+            c_new = t if x == i else np.maximum(c_temp[y], c_temp[sched[x - 1]] + self.prob.d[sched[x - 1]])
             c_temp[y] = c_new
         return c_temp[sched[j]] + self.prob.d[sched[j]]
 

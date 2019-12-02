@@ -8,7 +8,7 @@ from beecolony import BeeColony
 from gurobi import Gurobi
 import gantt
 
-np.random.seed(2)
+np.random.seed(1)
 
 prob = Problem(20, 5)
 

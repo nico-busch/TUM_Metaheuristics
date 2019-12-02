@@ -71,10 +71,10 @@ class GeneticAlgorithm:
                 break
 
             # Perform crossover
-            par1 = pop[np.random.randint(0, self.n_pop, self.n_crossover), :]
-            par2 = pop[np.random.randint(0, self.n_pop, self.n_crossover), :]
+            par1 = pop[np.random.randint(self.n_pop, size=self.n_crossover), :]
+            par2 = pop[np.random.randint(self.n_pop, size=self.n_crossover), :]
             if self.crossover_type == '1p':
-                cross = np.random.randint(0, self.prob.n, [self.n_crossover, 1])
+                cross = np.random.randint(self.prob.n, size=[self.n_crossover, 1])
                 r = np.arange(self.prob.n)
                 off1 = np.where(r < cross, par1, par2)
                 off2 = np.where(r < cross, par2, par1)
@@ -89,8 +89,8 @@ class GeneticAlgorithm:
             off = np.vstack([off1, off2])
 
             # Perform mutation with probability p1
-            switch1 = np.random.randint(0, self.prob.n, self.n_crossover * 2)
-            switch2 = np.random.randint(0, self.prob.n, self.n_crossover * 2)
+            switch1 = np.random.randint(self.prob.n, size=self.n_crossover * 2)
+            switch2 = np.random.randint(self.prob.n, size=self.n_crossover * 2)
             mut = np.copy(off)
             mut[np.arange(self.n_crossover * 2), switch1], mut[np.arange(self.n_crossover * 2), switch2] \
                 = off[np.arange(self.n_crossover * 2), switch2], off[np.arange(self.n_crossover * 2), switch1]
@@ -105,6 +105,9 @@ class GeneticAlgorithm:
             pop = off[top_idx]
             pop_c = off_c[top_idx]
             pop_obj = off_obj[top_idx]
+
+            import sys
+            np.set_printoptions(threshold=sys.maxsize)
 
             # Update best solution
             if np.amin(pop_obj) < self.best_obj:
