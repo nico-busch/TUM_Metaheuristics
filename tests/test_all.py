@@ -1,42 +1,42 @@
-import timeit
 import numpy as np
 
 from problem import Problem
 from tabusearch import TabuSearch
 from geneticalgorithm import GeneticAlgorithm
+from memeticalgorithm import MemeticAlgorithm
 from beecolony import BeeColony
 from gurobi import Gurobi
 import gantt
 
-np.random.seed(1)
+np.random.seed(2)
+
 prob = Problem(20, 5)
 
-start_time = timeit.default_timer()
-ts = TabuSearch(prob)
-sol = ts.solve()
-print("time: ", timeit.default_timer() - start_time)
+ts = TabuSearch(prob, n_term=10**3)
+ts.solve()
 
-if sol is not None:
+ga = GeneticAlgorithm(prob)
+ga.solve()
+
+ma = MemeticAlgorithm(prob)
+ma.solve()
+
+bc = BeeColony(prob)
+bc.solve()
+
+gu = Gurobi(prob)
+gu.solve()
+
+if ts.best is not None:
     gantt.create_gantt(prob, ts.best, ts.best_c)
 
-start_time = timeit.default_timer()
-ga = GeneticAlgorithm(prob)
-sol = ga.solve()
-print("time: ", timeit.default_timer() - start_time)
-
-if sol is not None:
+if ga.best is not None:
     gantt.create_gantt(prob, ga.best, ga.best_c)
 
-start_time = timeit.default_timer()
-bc = BeeColony(prob)
-sol = bc.solve()
-print("time: ", timeit.default_timer() - start_time)
+if ma.best is not None:
+    gantt.create_gantt(prob, ma.best, ma.best_c)
 
-if sol is not None:
+if bc.best is not None:
     gantt.create_gantt(prob, bc.best, bc.best_c)
 
-start_time = timeit.default_timer()
-gu = Gurobi(prob)
-sol = gu.solve()
-print("time: ", timeit.default_timer() - start_time)
 

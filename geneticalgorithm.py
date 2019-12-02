@@ -1,15 +1,15 @@
 import numpy as np
 from numba import njit
-import gantt
+import timeit
 
 
 class GeneticAlgorithm:
 
     def __init__(self,
-                 problem,
-                 n_iter=10**4,
+                 prob,
+                 n_iter=10**5,
                  n_term=500,
-                 n_pop=10,
+                 n_pop=300,
                  n_crossover=500,
                  crossover_type='2p',
                  p1=0.2):
@@ -23,7 +23,7 @@ class GeneticAlgorithm:
         self.p1 = p1
 
         # Input
-        self.prob = problem
+        self.prob = prob
 
         # Output
         self.best = None
@@ -32,6 +32,10 @@ class GeneticAlgorithm:
 
     def solve(self):
 
+        print('Beginning Genetic Algorithm')
+
+        start_time = timeit.default_timer()
+
         # Create the initial population
         count_infeasible = 0
         pop = np.empty([0, self.prob.n], dtype=np.int64)
@@ -39,7 +43,7 @@ class GeneticAlgorithm:
         while pop.shape[0] < self.n_pop:
             if count_infeasible >= 10000:
                 print("The algorithm cannot find enough feasible solutions")
-                return None
+                return None, None, None
             else:
                 s, c = self.generate_solution(
                     np.random.randint(0, self.prob.m, [self.n_pop - pop.shape[0], self.prob.n]))
@@ -54,8 +58,10 @@ class GeneticAlgorithm:
         self.best_c = pop_c[best_idx]
         self.best_obj = pop_obj[best_idx]
 
-        print('{:<10}{:>10}'.format('Iter', 'Best Obj'))
-        print('{:<10}{:>10.4f}'.format('init', self.best_obj))
+        print('{:<10}{:>15}{:>10}'.format('Iter', 'Best Obj', 'Time'))
+        print('{:<10}{:>15.4f}{:>9.0f}{}'.format('init',
+                                                 self.best_obj,
+                                                 timeit.default_timer() - start_time, 's'))
 
         count_term = 0
         for x in range(self.n_iter):
@@ -106,12 +112,18 @@ class GeneticAlgorithm:
                 self.best = pop[best_idx]
                 self.best_c = pop_c[best_idx]
                 self.best_obj = pop_obj[best_idx]
-                print('{:<10}{:>10.4f}'.format(x + 1, self.best_obj))
+                print('{:<10}{:>15.4f}{:>9.0f}{}'.format(x + 1,
+                                                         self.best_obj,
+                                                         timeit.default_timer() - start_time, 's'))
                 count_term = 0
             else:
                 count_term += 1
 
-        return self.best_obj
+        print('Termination criterion reached')
+        print('{}{}'.format('Best objective value is ', self.best_obj))
+        print('{}{}'.format('Time is ', timeit.default_timer() - start_time))
+
+        return self.best, self.best_c, self.best_obj
 
     def generate_solution(self, s):
         return self._generate_solution(self.prob.m, self.prob.a, self.prob.b, self.prob.d, s)
