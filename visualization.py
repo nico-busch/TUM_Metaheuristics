@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 np.random.seed(1)
 
-prob = Problem(50, 12)
+prob = Problem(12, 3)
 
 ts = TabuSearch(prob)
 ts.solve()
@@ -60,7 +60,7 @@ ax.plot(ga.runtimes, ga.solutions/div, color='y')
 ax.plot(ma.runtimes, ma.solutions/div, color='b')
 #ax.plot(bc.runtimes/div, bc.solutions/div, color='g')
 min_value = np.concatenate((ts.solutions, ga.solutions, ma.solutions), axis=0)
-ax.axhline(y=min_value, label='Best Solution', color='k')
+ax.axhline(y=np.amin(min_value), label='Best Solution', color='k')
 ax.set_xlabel("time [sec]")
 ax.set_ylabel("objective value [K]")
 ax.legend()
