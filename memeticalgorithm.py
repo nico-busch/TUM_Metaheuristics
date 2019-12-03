@@ -14,7 +14,7 @@ class MemeticAlgorithm(GeneticAlgorithm):
                  n_crossover=500,
                  crossover_type='2p',
                  p1=0.2,
-                 n_iter_ts=50,
+                 n_iter_ts=100,
                  n_neigh=10,
                  n_tabu_tenure=10,
                  n_term_ts=5,
