@@ -29,7 +29,7 @@ class MemeticAlgorithm(GeneticAlgorithm):
         self.n_term_ts = n_term_ts
         self.p2 = p2
 
-    def solve(self):
+    def solve(self, show_print=True):
 
         print('Beginning Memetic Algorithm')
 
@@ -57,10 +57,13 @@ class MemeticAlgorithm(GeneticAlgorithm):
         self.best_c = pop_c[best_idx]
         self.best_obj = pop_obj[best_idx]
 
-        print('{:<10}{:>15}{:>10}'.format('Iter', 'Best Obj', 'Time'))
-        print('{:<10}{:>15.4f}{:>9.0f}{}'.format('init',
-                                                 self.best_obj,
-                                                 timeit.default_timer() - start_time, 's'))
+        self.solutions = np.append(self.solutions,self.best_obj)
+        self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
+        if show_print:
+            print('{:<10}{:>15}{:>10}'.format('Iter', 'Best Obj', 'Time'))
+            print('{:<10}{:>15.4f}{:>9.0f}{}'.format('init',
+                                                     self.best_obj,
+                                                     timeit.default_timer() - start_time, 's'))
 
         count_term = 0
         for x in range(self.n_iter):
@@ -106,9 +109,11 @@ class MemeticAlgorithm(GeneticAlgorithm):
                                     n_iter=self.n_iter_ts,
                                     n_neigh=self.n_neigh,
                                     n_tabu_tenure=self.n_tabu_tenure,
-                                    n_term=self.n_term_ts)
-                    off[indv], off_c[indv], off_obj[indv] = \
-                        ts.solve(off[indv], off_c[indv], off_obj[indv], show_print=False)
+                                    n_term=self.n_term_ts,
+                                    initial=off[indv],
+                                    initial_c=off_c[indv],
+                                    initial_obj=off_obj[indv])
+                    off[indv], off_c[indv], off_obj[indv] = ts.solve(show_print=False)
 
             # Carry top individuals to the next generation
             top_idx = np.argsort(off_obj)[:self.n_pop]
@@ -122,15 +127,19 @@ class MemeticAlgorithm(GeneticAlgorithm):
                 self.best = pop[best_idx]
                 self.best_c = pop_c[best_idx]
                 self.best_obj = pop_obj[best_idx]
-                print('{:<10}{:>15.4f}{:>9.0f}{}'.format(x + 1,
-                                                         self.best_obj,
-                                                         timeit.default_timer() - start_time, 's'))
                 count_term = 0
+                self.solutions = np.append(self.solutions, self.best_obj)
+                self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
+                if show_print:
+                    print('{:<10}{:>15.4f}{:>9.0f}{}'.format(x + 1,
+                                                             self.best_obj,
+                                                             timeit.default_timer() - start_time, 's'))
             else:
                 count_term += 1
 
-        print('Termination criterion reached')
-        print('{}{}'.format('Best objective value is ', self.best_obj))
-        print('{}{}'.format('Time is ', timeit.default_timer() - start_time))
+        if show_print:
+            print('Termination criterion reached')
+            print('{}{}'.format('Best objective value is ', self.best_obj))
+            print('{}{}'.format('Time is ', timeit.default_timer() - start_time))
 
         return self.best, self.best_c, self.best_obj

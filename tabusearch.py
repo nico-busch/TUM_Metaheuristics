@@ -10,7 +10,10 @@ class TabuSearch:
                  n_iter=10**6,
                  n_neigh=100,
                  n_tabu_tenure=10,
-                 n_term=10**4):
+                 n_term=10**4,
+                 initial=None,
+                 initial_c=None,
+                 initial_obj=None):
 
         # parameters
         self.n_iter = n_iter
@@ -21,13 +24,20 @@ class TabuSearch:
         # input
         self.prob = prob
 
+        # initial solution
+        self.initial = initial
+        self.initial_c = initial_c
+        self.initial_obj = initial_obj
+
         # output
-        self.best = np.empty(self.prob.n, dtype=int)
+        self.best = None
         self.best_c = None
         self.best_obj = None
+        self.solutions = np.empty(0)
+        self.runtimes = np.empty(0)
 
     # Main function
-    def solve(self, initial=None, initial_c=None, initial_obj=None, show_print=True):
+    def solve(self, show_print=True):
 
         if show_print:
             print('Beginning Tabu Search')
@@ -36,7 +46,7 @@ class TabuSearch:
         # search arrays
         tabu_tenure = -np.ones([self.n_tabu_tenure, self.prob.n], dtype=np.int64)
 
-        if initial is None:
+        if self.initial is None:
             # create initial solution
             count_infeasible = 0
             while self.best_c is None:
@@ -47,8 +57,10 @@ class TabuSearch:
                 count_infeasible += 1
             self.best_obj = self.calculate_objective_value(self.best[np.newaxis, :], self.best_c[np.newaxis, :])[0]
         else:
-            self.best, self.best_c, self.best_obj = initial, initial_c, initial_obj
+            self.best, self.best_c, self.best_obj = self.initial, self.initial_c, self.initial_obj
 
+        self.solutions = np.append(self.solutions, self.best_obj)
+        self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
         if show_print:
             print('{:<10}{:>15}{:>10}'.format('Iter', 'Best Obj', 'Time'))
             print('{:<10}{:>15.4f}{:>9.0f}{}'.format('init',
@@ -81,6 +93,8 @@ class TabuSearch:
                 self.best_c = curr_c.copy()
                 self.best_obj = curr_obj.copy()
                 count_term = 0
+                self.solutions = np.append(self.solutions, self.best_obj)
+                self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
                 if show_print:
                     print('{:<10}{:>15.4f}{:>9.0f}{}'.format(count_iter + 1,
                                                              self.best_obj,
@@ -156,6 +170,7 @@ class TabuSearch:
 
 @njit
 def _interval_exchange(m, a, b, d, s, c):
+
     k_1, k_2 = np.random.choice(m, 2, replace=False)
 
     idx_1, = np.nonzero(s == k_1)
@@ -180,15 +195,11 @@ def _interval_exchange(m, a, b, d, s, c):
     earliest_end_int_1 = c[j_1] + d[j_1]
     earliest_end_int_2 = c[j_2] + d[j_2]
     earliest_start_gap_1 = a[i_2] if loc_i_1 == 0 else np.maximum(a[i_2],
-                                                                            c[sched_1[loc_i_1 - 1]] +
-                                                                            d[sched_1[loc_i_1 - 1]])
+                                                                  c[sched_1[loc_i_1 - 1]] + d[sched_1[loc_i_1 - 1]])
     earliest_start_gap_2 = a[i_1] if loc_i_2 == 0 else np.maximum(a[i_1],
-                                                                            c[sched_2[loc_i_2 - 1]] +
-                                                                            d[sched_2[loc_i_2 - 1]])
-    latest_end_gap_1 = b[j_2] if loc_j_1 == sched_1.size - 1 else np.minimum(b[j_2],
-                                                                                       c[sched_1[loc_j_1 + 1]])
-    latest_end_gap_2 = b[j_1] if loc_j_2 == sched_2.size - 1 else np.minimum(b[j_1],
-                                                                                       c[sched_2[loc_j_2 + 1]])
+                                                                  c[sched_2[loc_i_2 - 1]] + d[sched_2[loc_i_2 - 1]])
+    latest_end_gap_1 = b[j_2] if loc_j_1 == sched_1.size - 1 else np.minimum(b[j_2], c[sched_1[loc_j_1 + 1]])
+    latest_end_gap_2 = b[j_1] if loc_j_2 == sched_2.size - 1 else np.minimum(b[j_1], c[sched_2[loc_j_2 + 1]])
 
     # general infeasibility check
     if earliest_start_gap_1 > latest_start_int_2 \
@@ -215,6 +226,7 @@ def _interval_exchange(m, a, b, d, s, c):
 
 @njit
 def _insert(n, m, a, b, d,  s, c):
+
     # Choose randomly a flight i and gate k
     i = np.random.randint(0, n)
     k = s[i]
@@ -318,7 +330,7 @@ def _attempt_shift_interval_right(b, d, s, c, k, i, j):
     idx, = np.nonzero(s == k)
     sched = idx[np.argsort(c_temp[idx])]
     for x, y in enumerate(sched[i:j + 1][::-1]):
-        c_new = b[y] - d[y] if x == 0 and j == sched.size - 1\
+        c_new = b[y] - d[y] if x == 0 and j == sched.size - 1 \
             else np.minimum(b[y], c_temp[sched[j - x + 1]]) - d[y]
         c_temp[y] = c_new
     return c_temp[sched[i]]
