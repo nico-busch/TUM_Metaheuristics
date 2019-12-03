@@ -9,83 +9,6 @@ from gurobi import Gurobi
 import gantt
 import matplotlib.pyplot as plt
 
-np.random.seed(1)
-
-prob = Problem(12, 3)
-
-ts = TabuSearch(prob)
-ts.solve()
-
-ga = GeneticAlgorithm(prob)
-ga.solve()
-
-ma = MemeticAlgorithm(prob)
-ma.solve()
-
-#bc = BeeColony(prob)
-#bc.solve()
-
-# gu = Gurobi(prob)
-# gu.solve()
-#
-#if ts.best is not None:
-#    gantt.create_gantt(prob, ts.best, ts.best_c)
-#
-# if ga.best is not None:
-#     gantt.create_gantt(prob, ga.best, ga.best_c)
-#
-# if ma.best is not None:
-#     gantt.create_gantt(prob, ma.best, ma.best_c)
-#
-# if bc.best is not None:
-#     gantt.create_gantt(prob, bc.best, bc.best_c)
-
-# data preparation for plot 1
-div = 1000
-
-# data preparation for plot 2
-
-
-
-# visualization
-
-# plot 1
-fig, ax = plt.subplots()
-ax.scatter(ts.runtimes, ts.solutions/div, color='r', label='Tabu Search')
-ax.scatter(ga.runtimes, ga.solutions/div, color='y', label='Genetic')
-ax.scatter(ma.runtimes, ma.solutions/div, color='b', label='Memetic')
-#ax.scatter(bc.runtimes/div, bc.solutions/div, color='g', label='Bee Colony')
-ax.plot(ts.runtimes, ts.solutions/div, color='r')
-ax.plot(ga.runtimes, ga.solutions/div, color='y')
-ax.plot(ma.runtimes, ma.solutions/div, color='b')
-#ax.plot(bc.runtimes/div, bc.solutions/div, color='g')
-min_value = np.concatenate((ts.solutions, ga.solutions, ma.solutions), axis=0)
-ax.axhline(y=np.amin(min_value), label='Best Solution', color='k')
-ax.set_xlabel("time [sec]")
-ax.set_ylabel("objective value [K]")
-ax.legend()
-ax.set_xlim(xmin=0)
-plt.show()
-
-
-'''
-# plot 2
-fig, ax = plt.subplots()
-ax.scatter(ts.runtimes, ts.solutions/div, color='r', label='Tabu Search', marker='.')
-ax.scatter(ga.runtimes, ga.solutions/div, color='y', label='Genetic', marker='^')
-ax.scatter(ma.runtimes, ma.solutions/div, color='b', label='Memetic', marker='s')
-#ax.scatter(bc.runtimes/div, bc.solutions/div, color='g', label='Bee Colony')
-ax.plot(ts.runtimes, ts.solutions/div, color='r')
-ax.plot(ga.runtimes, ga.solutions/div, color='y')
-ax.plot(ma.runtimes, ma.solutions/div, color='b')
-#ax.plot(bc.runtimes/div, bc.solutions/div, color='g')
-ax.set_xlabel("time [sec]")
-ax.set_ylabel("objective value [K]")
-ax.legend()
-ax.set_xlim(xmin=0)
-plt.show()
-'''
-
 # plot 3
 paper_cplex_runtime_small = np.average(np.array([24, 28, 782, 367, 871, 438, 1679, 1454, 2110, 1792]))
 paper_ts_runtime_small = np.average(np.array([20, 15, 24, 14, 29, 40, 16, 29, 24, 28]))
@@ -120,6 +43,3 @@ ax.set_xlim(xmin=0)
 ax.set_ylim(ymin=0)
 plt.plot(x, x + 0, '--k')
 plt.show()
-
-
-
