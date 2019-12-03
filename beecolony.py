@@ -1,14 +1,15 @@
 import numpy as np
 from numba import njit
+import timeit
 
 
 class BeeColony:
 
     def __init__(self,
                  problem,
-                 n_iter=10**4,
-                 n_term=100,
-                 n_bees=1000):
+                 n_iter=10**5,
+                 n_term=500,
+                 n_bees=10**3):
 
         # Parameters
         self.n_iter = n_iter
@@ -22,10 +23,15 @@ class BeeColony:
         self.best = None
         self.best_c = None
         self.best_obj = np.inf
+        self.solutions = np.empty(0)
+        self.runtimes = np.empty(0)
 
-    def solve(self):
+    def solve(self, show_print=True):
 
-        print('{:<10}{:>10}'.format('Iter', 'Best Obj'))
+        start_time = timeit.default_timer()
+        if show_print:
+            print('Beginning Bee Colony Optimization')
+            print('{:<10}{:>15}{:>10}'.format('Iter', 'Best Obj', 'Time'))
 
         count_term = 0
         for x in range(self.n_iter):
@@ -35,39 +41,39 @@ class BeeColony:
                 break
 
             # Initialize bees
-            bees = -np.ones((self.n_bees, self.prob.n), dtype=np.int64)
-            bees_c = np.zeros((self.n_bees, self.prob.n))
+            bees = -np.ones([self.n_bees, self.prob.n], dtype=np.int64)
+            bees_c = np.empty([self.n_bees, self.prob.n])
             bees_obj = np.empty(self.n_bees)
 
             for n, i in enumerate(self.prob.a.argsort(), 1):
 
                 # Generate new step
                 bees[:, i] = np.random.randint(0, self.prob.m, self.n_bees)
-                bees, bees_c, infeas = self.generate_solution(i, bees, bees_c)
+                bees, bees_c, infeasible = self.generate_solution(i, bees, bees_c)
 
                 # Get feasible bees
-                feas = np.ones(self.n_bees, dtype=np.bool_)
-                feas[infeas] = 0
-                if not feas.any():
+                feasible = np.ones(self.n_bees, dtype=np.bool_)
+                feasible[infeasible] = 0
+
+                if not feasible.any():
                     print("The algorithm cannot find a feasible solution")
                     return None
 
                 # Calculate objective value
-                bees_obj[feas] = self.calculate_objective_value(bees[feas], bees_c[feas])
-                bees_obj[infeas] = np.inf
-
-                if np.ptp(bees_obj[feas]) == 0:
+                bees_obj[feasible] = self.calculate_objective_value(bees[feasible], bees_c[feasible])
+                bees_obj[~feasible] = np.inf
+                if np.ptp(bees_obj[feasible]) == 0:
                     continue
 
                 # Calculate normalized objective value
                 bees_obj_norm = np.empty(self.n_bees)
-                bees_obj_norm[feas] = (np.amax(bees_obj[feas]) - bees_obj[feas]) \
-                                      / (np.amax(bees_obj[feas]) - np.amin(bees_obj[feas]))
+                bees_obj_norm[feasible] = (np.amax(bees_obj[feasible]) - bees_obj[feasible]) / \
+                                          (np.amax(bees_obj[feasible]) - np.amin(bees_obj[feasible]))
 
                 # Decide loyalty
                 p_loy = np.empty(self.n_bees)
-                p_loy[feas] = np.exp((bees_obj_norm[feas] - np.amax(bees_obj_norm[feas])) / n)
-                p_loy[infeas] = 0
+                p_loy[feasible] = np.exp((bees_obj_norm[feasible] - np.amax(bees_obj_norm[feasible])))
+                p_loy[~feasible] = 0
                 r_loy = np.random.rand(self.n_bees)
                 rec = r_loy <= p_loy
                 fol = r_loy > p_loy
@@ -84,12 +90,23 @@ class BeeColony:
                 self.best = bees[best_idx]
                 self.best_c = bees_c[best_idx]
                 self.best_obj = bees_obj[best_idx]
+                self.solutions = np.append(self.solutions, self.best_obj)
+                self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
+                if show_print:
+                    print('{:<10}{:>15.4f}{:>9.0f}{}'.format(x + 1,
+                                                             self.best_obj,
+                                                             timeit.default_timer() - start_time, 's'))
                 count_term = 0
-                print('{:<10}{:>10.4f}'.format(x + 1, self.best_obj))
             else:
                 count_term += 1
 
-        return self.best_obj
+        self.solutions = np.append(self.solutions, self.best_obj)
+        self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
+        print('Termination criterion reached')
+        print('{}{}'.format('Best objective value is ', self.best_obj))
+        print('{}{}'.format('Time is ', timeit.default_timer() - start_time))
+
+        return self.best, self.best_c, self.best_obj
 
     def generate_solution(self, i, s, c):
         return self._generate_solution(i, self.prob.m, self.prob.a, self.prob.b, self.prob.d, s, c)
@@ -123,7 +140,8 @@ class BeeColony:
     Utilizes np.einsum for fast tensor multiplication.
     '''
     def calculate_objective_value(self, s, c):
-        sum_delay_penalty = np.einsum('i,ni->n', self.prob.p, c - self.prob.a)
+        delay = np.where(s != -1, c - self.prob.a, 0)
+        sum_delay_penalty = np.einsum('i,ni->n', self.prob.p, delay)
 
         x = np.zeros([s.size, self.prob.m], dtype=np.int64)
         x[np.arange(s.size), s.ravel()] = 1
@@ -132,3 +150,4 @@ class BeeColony:
         sum_walking_distance = np.einsum('nik,njl,ij,kl->n', x, x, self.prob.f, self.prob.w, optimize=True)
 
         return sum_delay_penalty + sum_walking_distance
+
