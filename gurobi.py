@@ -95,9 +95,16 @@ class Gurobi:
                          for j in range(self.prob.n)
                          if i != j)
 
+
+        def mycallback(model, where):
+            if where == GRB.Callback.MIPSOL:
+                print(model.cbGet(GRB.Callback.MIPSOL_OBJ))
+                print(round(model.cbGet(GRB.Callback.RUNTIME)))
+
+        #model._vars = model.getVars()
         model.update()
         model.setParam('TimeLimit', 1800)
-        model.optimize()
+        model.optimize(mycallback)
         # objective_value = model.objVal
         # run_time = model.Runtime
         # print("Objective Value: ", round(objective_value))
