@@ -17,19 +17,30 @@ results.set_index(['Instance', 'Algorithm'], inplace=True)
 
 for index, instance in enumerate(instances, 1):
 
-    prob = Problem(*instance)
+    feasible = False
+    while not feasible:
 
-    ts = TabuSearch(prob)
-    ts.solve()
-    results.loc[(index, 'Tabu Search'), :] = [sizes[index - 1], *instance, ts.solutions[-1], ts.runtimes[-1]]
+        prob = Problem(*instance)
 
-    ga = GeneticAlgorithm(prob)
-    ga.solve()
-    results.loc[(index, 'Genetic Algorithm'), :] = [sizes[index - 1], *instance, ga.solutions[-1], ga.runtimes[-1]]
+        gu = Gurobi(prob)
+        gu.solve()
+        if gu.solutions.size == 0:
+            continue
+        else:
+            feasible = True
+        results.loc[(index, 'Gurobi'), :] = [sizes[index - 1], *instance, gu.solutions[-1], gu.runtimes[-1]]
 
-    ma = MemeticAlgorithm(prob)
-    ma.solve()
-    results.loc[(index, 'Memetic Algorithm'), :] = [sizes[index - 1], *instance, ma.solutions[-1], ma.runtimes[-1]]
+        ts = TabuSearch(prob)
+        ts.solve()
+        results.loc[(index, 'Tabu Search'), :] = [sizes[index - 1], *instance, ts.solutions[-1], ts.runtimes[-1]]
+
+        ga = GeneticAlgorithm(prob)
+        ga.solve()
+        results.loc[(index, 'Genetic Algorithm'), :] = [sizes[index - 1], *instance, ga.solutions[-1], ga.runtimes[-1]]
+
+        ma = MemeticAlgorithm(prob)
+        ma.solve()
+        results.loc[(index, 'Memetic Algorithm'), :] = [sizes[index - 1], *instance, ma.solutions[-1], ma.runtimes[-1]]
 
 results.to_csv('results.csv')
 
