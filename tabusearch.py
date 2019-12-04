@@ -39,9 +39,9 @@ class TabuSearch:
     # Main function
     def solve(self, show_print=True):
 
+        start_time = timeit.default_timer()
         if show_print:
             print('Beginning Tabu Search')
-        start_time = timeit.default_timer()
 
         # search arrays
         tabu_tenure = -np.ones([self.n_tabu_tenure, self.prob.n], dtype=np.int64)
@@ -83,30 +83,34 @@ class TabuSearch:
             neigh_obj = self.calculate_objective_value(neigh, neigh_c)
 
             # Condition for current solution update
-            top = np.argmin(neigh_obj[np.logical_or((neigh[:, np.newaxis] != tabu_tenure).any(-1).all(-1),
-                                                    neigh_obj < self.best_obj)])
-            curr = neigh.copy()[top]
-            curr_c = neigh_c.copy()[top]
-            curr_obj = neigh_obj.copy()[top]
-            if curr_obj < self.best_obj:
-                self.best = curr.copy()
-                self.best_c = curr_c.copy()
-                self.best_obj = curr_obj.copy()
-                count_term = 0
-                self.solutions = np.append(self.solutions, self.best_obj)
-                self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
-                if show_print:
-                    print('{:<10}{:>15.4f}{:>9.0f}{}'.format(count_iter + 1,
-                                                             self.best_obj,
-                                                             timeit.default_timer() - start_time, 's'))
+            allowed = neigh_obj[np.logical_or((neigh[:, np.newaxis] != tabu_tenure).any(-1).all(-1),
+                                              neigh_obj < self.best_obj)]
+            if allowed.size > 0:
+                top = np.argmin(allowed)
+                curr = neigh.copy()[top]
+                curr_c = neigh_c.copy()[top]
+                curr_obj = neigh_obj.copy()[top]
+                tabu_tenure = np.roll(tabu_tenure, 1, axis=0)
+                tabu_tenure[0] = curr
+                if curr_obj < self.best_obj:
+                    self.best = curr.copy()
+                    self.best_c = curr_c.copy()
+                    self.best_obj = curr_obj.copy()
+                    self.solutions = np.append(self.solutions, self.best_obj)
+                    self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
+                    if show_print:
+                        print('{:<10}{:>15.4f}{:>9.0f}{}'.format(count_iter + 1,
+                                                                 self.best_obj,
+                                                                 timeit.default_timer() - start_time, 's'))
+                    count_term = 0
+                else:
+                    count_term += 1
             else:
                 count_term += 1
 
-            # Update memory
-            tabu_tenure = np.roll(tabu_tenure, 1, axis=0)
-            tabu_tenure[0] = curr
-
         if show_print:
+            self.solutions = np.append(self.solutions, self.best_obj)
+            self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
             print('Termination criterion reached')
             print('{}{}'.format('Best objective value is ', self.best_obj))
             print('{}{}'.format('Time is ', timeit.default_timer() - start_time))

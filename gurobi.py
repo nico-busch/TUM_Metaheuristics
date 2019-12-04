@@ -5,8 +5,14 @@ import numpy as np
 class Gurobi:
 
     def __init__(self, prob):
+
+        # Input
         self.prob = prob
         self.M = np.amax(prob.b)
+
+        # Output
+        self.solutions = np.empty(0)
+        self.runtimes = np.empty(0)
 
     def solve(self):
         model = Model()
@@ -43,6 +49,7 @@ class Gurobi:
                              for l in range(self.prob.m)) + \
                     quicksum(self.prob.p[i] * (c_i[i] - self.prob.a[i])
                              for i in range(self.prob.n))
+
         # minimize objective function
         model.setObjective(objective, GRB.MINIMIZE)
 
@@ -95,18 +102,14 @@ class Gurobi:
                          for j in range(self.prob.n)
                          if i != j)
 
-
-        def mycallback(model, where):
+        def callback_results(model, where):
             if where == GRB.Callback.MIPSOL:
-                print(model.cbGet(GRB.Callback.MIPSOL_OBJ))
-                print(round(model.cbGet(GRB.Callback.RUNTIME)))
+                sol = model.cbGet(GRB.Callback.MIPSOL_OBJ)
+                time = model.cbGet(GRB.Callback.RUNTIME)
+                self.solutions = np.append(self.solutions, sol)
+                self.runtimes = np.append(self.runtimes, time)
 
-        #model._vars = model.getVars()
         model.update()
         model.setParam('TimeLimit', 1800)
-        model.optimize(mycallback)
-        # objective_value = model.objVal
-        # run_time = model.Runtime
-        # print("Objective Value: ", round(objective_value))
-        # print("Runtime: ", round(run_time))
+        model.optimize(callback_results)
         # model.computeIIS()

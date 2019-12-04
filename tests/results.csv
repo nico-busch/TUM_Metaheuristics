@@ -1,0 +1,4 @@
+Instance,Algorithm,Size,#Flights,#Gates,Objective Value,Runtime
+1,Tabu Search,small,12.0,3.0,2845.3198044878636,51.6236569
+1,Genetic Algorithm,small,12.0,3.0,2871.3198044878636,10.643926800000003
+1,Memetic Algorithm,small,12.0,3.0,2845.3198044878636,45.3662042

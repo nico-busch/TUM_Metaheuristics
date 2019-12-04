@@ -31,9 +31,9 @@ class MemeticAlgorithm(GeneticAlgorithm):
 
     def solve(self, show_print=True):
 
-        print('Beginning Memetic Algorithm')
-
         start_time = timeit.default_timer()
+        if show_print:
+            print('Beginning Memetic Algorithm')
 
         # Create the initial population
         count_infeasible = 0
@@ -127,17 +127,19 @@ class MemeticAlgorithm(GeneticAlgorithm):
                 self.best = pop[best_idx]
                 self.best_c = pop_c[best_idx]
                 self.best_obj = pop_obj[best_idx]
-                count_term = 0
                 self.solutions = np.append(self.solutions, self.best_obj)
                 self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
                 if show_print:
                     print('{:<10}{:>15.4f}{:>9.0f}{}'.format(x + 1,
                                                              self.best_obj,
                                                              timeit.default_timer() - start_time, 's'))
+                count_term = 0
             else:
                 count_term += 1
 
         if show_print:
+            self.solutions = np.append(self.solutions, self.best_obj)
+            self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
             print('Termination criterion reached')
             print('{}{}'.format('Best objective value is ', self.best_obj))
             print('{}{}'.format('Time is ', timeit.default_timer() - start_time))
