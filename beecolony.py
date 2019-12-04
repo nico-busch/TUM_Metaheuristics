@@ -8,7 +8,7 @@ class BeeColony:
     def __init__(self,
                  problem,
                  n_iter=10**5,
-                 n_term=500,
+                 n_term=100,
                  n_bees=10**3):
 
         # Parameters
@@ -49,12 +49,10 @@ class BeeColony:
 
                 # Generate new step
                 bees[:, i] = np.random.randint(0, self.prob.m, self.n_bees)
-                bees, bees_c, infeasible = self.generate_solution(i, bees, bees_c)
+                bees, bees_c = self.generate_solution(i, bees, bees_c)
 
                 # Get feasible bees
-                feasible = np.ones(self.n_bees, dtype=np.bool_)
-                feasible[infeasible] = 0
-
+                feasible = bees[:, i] != -1
                 if not feasible.any():
                     print("The algorithm cannot find a feasible solution")
                     return None
@@ -118,22 +116,17 @@ class BeeColony:
     @staticmethod
     @njit
     def _generate_solution(i, m, a, b, d, s, c):
-        infeasible = np.empty(0, dtype=np.int64)
         s_new = s.copy()
         s_new[:, i] = -1
         for x in range(s.shape[0]):
-            successful = False
             for k in np.roll(np.arange(m), -s[x, i]):
                 c_max = a[i] if s_new[x][s_new[x] == k].size == 0 \
                     else np.amax(np.maximum(c[x] + d, a[i])[s_new[x] == k])
                 if b[i] - c_max >= d[i]:
                     c[x, i] = c_max
                     s_new[x, i] = k
-                    successful = True
                     break
-            if not successful:
-                infeasible = np.append(infeasible, x)
-        return s_new, c, infeasible
+        return s_new, c
 
     '''
     Method to calculate the objective values for all bees for a single step.
