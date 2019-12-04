@@ -10,6 +10,7 @@ from gurobi import Gurobi
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
+
 # import data
 data = pd.read_csv('results.csv')
 print(data)
