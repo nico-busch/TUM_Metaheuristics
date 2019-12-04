@@ -33,7 +33,7 @@ class MemeticAlgorithm(GeneticAlgorithm):
 
         start_time = timeit.default_timer()
         if show_print:
-            print('Beginning Genetic Algorithm')
+            print('Beginning Memetic Algorithm')
 
         # Create the initial population
         count_infeasible = 0

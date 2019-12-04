@@ -1,11 +1,11 @@
 import pandas as pd
 
 from problem import Problem
+from gurobi import Gurobi
 from tabusearch import TabuSearch
 from geneticalgorithm import GeneticAlgorithm
 from memeticalgorithm import MemeticAlgorithm
 from beecolony import BeeColony
-from gurobi import Gurobi
 
 instances = [(12, 3), (12, 3), (12, 4), (12, 4), (13, 4), (13, 4), (14, 4), (14, 4), (15, 4), (15, 4),
              (20, 5), (20, 5), (22, 5), (22, 5), (24, 6), (24, 6), (26, 6), (26, 6), (28, 6), (28, 6),
@@ -41,6 +41,10 @@ for index, instance in enumerate(instances, 1):
         ma = MemeticAlgorithm(prob)
         ma.solve()
         results.loc[(index, 'Memetic Algorithm'), :] = [sizes[index - 1], *instance, ma.solutions[-1], ma.runtimes[-1]]
+
+        bc = BeeColony(prob)
+        bc.solve()
+        results.loc[(index, 'Bee Colony'), :] = [sizes[index - 1], *instance, bc.solutions[-1], bc.runtimes[-1]]
 
 results.to_csv('results.csv')
 
