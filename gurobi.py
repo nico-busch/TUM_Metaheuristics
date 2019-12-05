@@ -38,7 +38,7 @@ class Gurobi:
 
         c_i = {}
         for i in range(self.prob.n):
-            c_i[i] = model.addVar(lb=0.000001, vtype=GRB.CONTINUOUS, name=f'c_i[{i}]')
+            c_i[i] = model.addVar(lb=0.0, vtype=GRB.CONTINUOUS, name=f'c_i[{i}]')
 
         model.update()
 
