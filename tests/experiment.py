@@ -22,13 +22,14 @@ for index, instance in enumerate(instances, 1):
 
         prob = Problem(*instance)
 
-        gu = Gurobi(prob)
-        gu.solve()
-        if gu.solutions.size == 0:
-            continue
-        else:
-            feasible = True
-        results.loc[(index, 'Gurobi'), :] = [sizes[index - 1], *instance, gu.solutions[-1], gu.runtimes[-1]]
+        if sizes[index - 1] != 'large':
+            gu = Gurobi(prob)
+            gu.solve()
+            if gu.solutions.size == 0:
+                continue
+            else:
+                feasible = True
+            results.loc[(index, 'Gurobi'), :] = [sizes[index - 1], *instance, gu.solutions[-1], gu.runtimes[-1]]
 
         ts = TabuSearch(prob)
         ts.solve()
@@ -46,6 +47,6 @@ for index, instance in enumerate(instances, 1):
         bc.solve()
         results.loc[(index, 'Bee Colony'), :] = [sizes[index - 1], *instance, bc.solutions[-1], bc.runtimes[-1]]
 
-results.to_csv('results.csv')
+        results.to_csv('results_test.csv')
 
 
