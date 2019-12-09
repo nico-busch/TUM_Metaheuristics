@@ -100,9 +100,10 @@ class BeeColony:
 
         self.solutions = np.append(self.solutions, self.best_obj)
         self.runtimes = np.append(self.runtimes, timeit.default_timer() - start_time)
-        print('Termination criterion reached')
-        print('{}{}'.format('Best objective value is ', self.best_obj))
-        print('{}{}'.format('Time is ', timeit.default_timer() - start_time))
+        if show_print:
+            print('Termination criterion reached')
+            print('{}{}'.format('Best objective value is ', self.best_obj))
+            print('{}{}'.format('Time is ', timeit.default_timer() - start_time))
 
         return self.best, self.best_c, self.best_obj
 
