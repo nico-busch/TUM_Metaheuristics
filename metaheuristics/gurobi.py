@@ -112,4 +112,7 @@ class Gurobi:
         model.update()
         model.setParam('TimeLimit', 1800)
         model.optimize(callback_results)
+        if model.status == GRB.Status.TIME_LIMIT:
+            self.solutions = np.append(self.solutions, model.ObjVal)
+            self.runtimes = np.append(self.runtimes, model.Runtime)
         # model.computeIIS()

@@ -1,11 +1,5 @@
 import numpy as np
 import pandas as pd
-from problem import Problem
-from tabusearch import TabuSearch
-from geneticalgorithm import GeneticAlgorithm
-from memeticalgorithm import MemeticAlgorithm
-from beecolony import BeeColony
-from gurobi import Gurobi
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 

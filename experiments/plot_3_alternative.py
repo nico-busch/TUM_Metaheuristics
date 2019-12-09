@@ -1,15 +1,7 @@
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from problem import Problem
-from tabusearch import TabuSearch
-from geneticalgorithm import GeneticAlgorithm
-from memeticalgorithm import MemeticAlgorithm
-from beecolony import BeeColony
-from gurobi import Gurobi
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
 
 # import data
 data = pd.read_csv('results.csv')

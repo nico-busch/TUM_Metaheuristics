@@ -1,7 +1,7 @@
 import numpy as np
 import timeit
-from tabusearch import TabuSearch
-from geneticalgorithm import GeneticAlgorithm
+from metaheuristics.tabusearch import TabuSearch
+from metaheuristics.geneticalgorithm import GeneticAlgorithm
 
 
 class MemeticAlgorithm(GeneticAlgorithm):
