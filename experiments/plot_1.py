@@ -6,7 +6,7 @@ data = pd.read_csv('experimental_results.csv',
                    converters={'Objective Values': lambda x: np.fromstring(x[1:-1], sep=' '),
                                'Runtimes': lambda x: np.fromstring(x[1:-1], sep=' ')},
                    index_col=['Instance', 'Algorithm'])
-instance = 11
+instance = 21
 data = data.loc[instance]
 
 col = {'Gurobi': 'tab:red',
