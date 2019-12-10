@@ -12,14 +12,14 @@ data = pd.read_csv('experimental_results.csv',
                    index_col=['Instance', 'Algorithm'])
 data = data.loc[~data.index.get_level_values(1).isin(['Gurobi'])]
 
-fig, axs = plt.subplots(2, 2, figsize=(8, 8))
+fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
 
 legend = set()
-col = {'Gurobi': 'r',
-       'Tabu Search': 'y',
-       'Genetic Algorithm': 'g',
-       'Memetic Algorithm': 'c',
-       'Bee Colony': 'b'}
+col = {'Gurobi': 'tab:red',
+       'Tabu Search': 'tab:green',
+       'Genetic Algorithm': 'tab:blue',
+       'Memetic Algorithm': 'tab:purple',
+       'Bee Colony': 'tab:orange'}
 
 algorithms1 = data.groupby('Algorithm')
 
@@ -28,17 +28,20 @@ for (x, algorithm1), ax in zip(algorithms1, axs.flatten()):
     algorithms2 = data.loc[~data.index.get_level_values(1).isin([x])].groupby('Algorithm')
     for (y, algorithm2) in algorithms2:
         tim2 = [z[-1] for z in algorithm2['Runtimes']]
-        ax.axis('square')
         ax.scatter(tim2, tim1, color=col[y], label=y if y not in legend else None)
+        legend.add(y)
         ax.set_yscale('log')
         ax.set_xscale('log')
-        ax.set_xlim(1)
-        ax.set_ylim(1)
+        ax.set_aspect('equal')
+        ax.set_xlim(3, 10 ** 4 + 10 ** 3 * 5)
+        ax.set_ylim(3, 10 ** 4 + 10 ** 3 * 5)
         s = np.linspace(*ax.get_xlim())
         ax.plot(s, s, color='grey', zorder=0)
-        ax.set_ylabel(x)
+        ax.set_ylabel(x, labelpad=10)
 
-handles, labels = ax.get_legend_handles_labels()
-fig.legend(handles, labels, loc='upper center')
+lines_labels = [ax.get_legend_handles_labels() for ax in fig.axes]
+lines, labels = [sum(x, []) for x in zip(*lines_labels)]
+
+fig.legend(lines, labels, loc='right')
 
 plt.show()

@@ -12,11 +12,11 @@ data = pd.read_csv('experimental_results.csv',
 fig, ax = plt.subplots()
 
 legend = set()
-col = {'Gurobi': 'r',
-       'Tabu Search': 'y',
-       'Genetic Algorithm': 'g',
-       'Memetic Algorithm': 'c',
-       'Bee Colony': 'b'}
+col = {'Gurobi': 'tab:red',
+       'Tabu Search': 'tab:green',
+       'Genetic Algorithm': 'tab:blue',
+       'Memetic Algorithm': 'tab:purple',
+       'Bee Colony': 'tab:orange'}
 
 for x, size in data.groupby('Size'):
 

@@ -81,11 +81,11 @@ bc_run_large = data[np.in1d(data.index.get_level_values(1), ['Bee Colony'])][dat
 # plot 3
 fig, ax = plt.subplots()
 
-col = {'Gurobi': 'r',
-       'Tabu Search': 'y',
-       'Genetic Algorithm': 'g',
-       'Memetic Algorithm': 'c',
-       'Bee Colony': 'b'}
+col = {'Gurobi': 'tab:red',
+       'Tabu Search': 'tab:green',
+       'Genetic Algorithm': 'tab:blue',
+       'Memetic Algorithm': 'tab:purple',
+       'Bee Colony': 'tab:orange'}
 
 ax.scatter(ts_run_small, paper_ts_runtime_small, color=col['Tabu Search'], label='Tabu Search, small', marker='*')
 ax.scatter(ga_run_small, paper_ga2_runtime_small, color=col['Genetic Algorithm'], label='Genetic, small', marker='*')
