@@ -9,16 +9,16 @@ from metaheuristics.memeticalgorithm import MemeticAlgorithm
 from metaheuristics.beecolony import BeeColony
 
 
-instances = [(12, 3), (12, 3), (12, 3), (12, 3), (12, 3), (12, 3), (12, 3), (12, 3), (12, 3), (12, 3)]
+instances = [(20, 5), (20, 5), (20, 5), (20, 5), (20, 5), (20, 5), (20, 5), (20, 5), (20, 5), (20, 5)]
 sizes = ['medium'] * 10
 
 results = pd.DataFrame(columns=['Instance', 'Algorithm', 'Size', '#Flights', '#Gates', 'Objective Values', 'Runtimes'])
 results.set_index(['Instance', 'Algorithm'], inplace=True)
-for x in range(1):
+for x in range(5):
 
     np.random.seed(x)
 
-    for index, instance in enumerate(instances, 1):
+    for index, instance in enumerate(instances, 10*(x-1)+1):
 
         while True:
 
@@ -48,5 +48,7 @@ for x in range(1):
                 continue
             results.loc[(index, 'Bee Colony'), :] = [sizes[index - 1], *instance, bc.solutions, bc.runtimes]
 
-            results.to_csv('robustness_results.csv')
             break
+
+
+results.to_csv('robustness_results.csv')
