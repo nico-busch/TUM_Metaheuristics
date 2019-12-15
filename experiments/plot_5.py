@@ -21,7 +21,7 @@ for x, algorithm in data.groupby('Algorithm'):
     tim = [z[-1] for z in algorithm['Runtimes']]
     ax.plot(instances, tim, color=col[x], marker='x', label=x)
 
-ax.set_yscale('log')
+#ax.set_yscale('log')
 ax.set_xlabel("instance")
 ax.set_ylabel("runtime [sec]")
 ax.legend()

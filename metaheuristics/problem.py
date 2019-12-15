@@ -28,6 +28,8 @@ class Problem:
     # creates data with regards to the number of flights n and number of gates m
     def create_data(self):
 
+        np.random.seed(3)
+
         # create arrays randomly
         self.a = np.random.uniform(1, self.n * 70 / self.m, self.n)
         self.b = self.a + np.random.uniform(45, 74, self.n)
