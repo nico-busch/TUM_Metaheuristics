@@ -12,7 +12,7 @@ from metaheuristics.memeticalgorithm import MemeticAlgorithm
 from metaheuristics.beecolony import BeeColony
 
 
-pickle_in = open("runtime_variation.pickle", "rb")
+pickle_in = open("objective_variation.pickle", "rb")
 example_dict = pickle.load(pickle_in)
 
 fig, ax = plt.subplots()

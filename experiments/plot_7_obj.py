@@ -16,9 +16,9 @@ ma_obj_diff = np.arange(10)
 bc_obj_diff = np.arange(10)
 x = 0
 
-while x < 10:
+prob = Problem(12, 4)
 
-    prob = Problem(12, 4)
+while x < 10:
 
     gu = Gurobi(prob)
     gu.solve()
