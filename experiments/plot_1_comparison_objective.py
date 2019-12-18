@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.spatial import ConvexHull
 
+'''
+    This plot directly compares the solution quality of one metaheuristic to all the other metaheuristics. 
+'''
 
 # import data
 data = pd.read_csv('experimental_results.csv',
@@ -30,8 +33,6 @@ for (x, algorithm1), ax in zip(algorithms1, axs.flatten()):
         tim2 = [z[-1]/1000 for z in algorithm2['Objective Values']]
         ax.scatter(tim2, tim1, color=col[y], label=y if y not in legend else None)
         legend.add(y)
-        #ax.set_yscale('log')
-        #ax.set_xscale('log')
         ax.set_aspect('equal')
         ax.set_xlim(0, 10 ** 3)
         ax.set_ylim(0, 10 ** 3)

@@ -7,6 +7,10 @@ from metaheuristics.geneticalgorithm import GeneticAlgorithm
 from metaheuristics.memeticalgorithm import MemeticAlgorithm
 from metaheuristics.beecolony import BeeColony
 
+'''
+    Running this file creates a new experiment. Note that the total runtime of the experiment is around 22 hours.
+'''
+
 instances = [(12, 3), (12, 3), (12, 4), (12, 4), (13, 4), (13, 4), (14, 4), (14, 4), (15, 4), (15, 4),
              (20, 5), (20, 5), (22, 5), (22, 5), (24, 6), (24, 6), (26, 6), (26, 6), (28, 6), (28, 6),
              (50, 10), (50, 10), (60, 10), (60, 12), (80, 12), (80, 15), (100, 15), (100, 20)]
@@ -52,5 +56,5 @@ for index, instance in enumerate(instances, 1):
             continue
         results.loc[(index, 'Bee Colony'), :] = [sizes[index - 1], *instance, bc.solutions, bc.runtimes]
 
-        results.to_csv('experimental_results2.csv')
+        results.to_csv('experimental_results_2.csv')
         break

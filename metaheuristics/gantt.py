@@ -3,6 +3,14 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
+'''
+    This file contains a function to create a gantt chart with the inputs: 
+        - prob = problem instance
+        - s = (feasible) sequence of flight to gate allocations (index = flight number, value = allocated gate)
+        - c = (feasible) sequence of starting times for gate occupation for each flight (index = flight number,
+               value = scheduled time)   
+'''
+
 
 def create_gantt(prob, s, c):
 

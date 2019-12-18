@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+'''
+    This plot shows the objective of each metaheuristic for each instance (number of flights x number of gates).
+'''
+
 # import data
 data = pd.read_csv('experimental_results.csv',
                    converters={'Objective Values': lambda x: np.fromstring(x[1:-1], sep=' '),
@@ -21,7 +25,7 @@ for x, algorithm in data.groupby('Algorithm'):
     tim = [z[-1]/1000 for z in algorithm['Objective Values']]
     ax.plot(instances, tim, color=col[x], marker='x', label=x)
 
-ax.set_yscale('log')
+#ax.set_yscale('log')
 ax.set_xlabel("instance")
 ax.set_ylabel("objective value [k]")
 ax.legend()

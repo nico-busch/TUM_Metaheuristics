@@ -1,6 +1,10 @@
 import numpy as np
 import math
 
+'''
+    This file represents an instance. Input parameters are n (=number of flights) and m (=number of gates). The data
+    are created randomly based on formulas proposed by Lim et al. (2005).
+'''
 
 # this class only creates instances (objects) of the problem
 class Problem:

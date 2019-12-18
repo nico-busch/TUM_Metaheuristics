@@ -2,6 +2,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+'''
+    This plot shows the convergence behaviour of each implemented heuristic. By changing the variable "instance" 
+    different instances can be selected (small size: 1-10, medium size: 11-20, large size: 21-28).
+'''
+
 data = pd.read_csv('experimental_results.csv',
                    converters={'Objective Values': lambda x: np.fromstring(x[1:-1], sep=' '),
                                'Runtimes': lambda x: np.fromstring(x[1:-1], sep=' ')},
@@ -24,7 +29,9 @@ for x, algorithm in data.groupby('Algorithm'):
     sol = algorithm['Objective Values'].iloc[0]
     ax.plot(tim, sol / div, color=col[x], marker='o', label=x)
 
-#ax.set_xscale('log')
+# logarithmic scale
+ax.set_xscale('log')
+
 ax.set_xlabel("time [sec]")
 ax.set_ylabel("objective value [k]")
 ax.legend()

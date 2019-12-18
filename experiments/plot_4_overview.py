@@ -3,7 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull
 
-# import data
+'''
+    This plot shows an overview of all instances and all implemented heuristic.
+'''
+
 data = pd.read_csv('experimental_results.csv',
                    converters={'Objective Values': lambda x: np.fromstring(x[1:-1], sep=' '),
                                'Runtimes': lambda x: np.fromstring(x[1:-1], sep=' ')},
@@ -34,7 +37,9 @@ for x, size in data.groupby('Size'):
         ax.scatter(tim, sol, color=col[y], label=y if y not in legend else None)
         legend.add(y)
 
+# logarithmic scale
 ax.set_yscale('log')
+
 ax.set_xscale('log')
 ax.set_xlabel("time [sec]")
 ax.set_ylabel("objective value")

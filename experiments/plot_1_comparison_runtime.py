@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.spatial import ConvexHull
 
+'''
+    This plot directly compares the runtime of one metaheuristic to all the other metaheuristics. 
+'''
 
 # import data
 data = pd.read_csv('experimental_results.csv',

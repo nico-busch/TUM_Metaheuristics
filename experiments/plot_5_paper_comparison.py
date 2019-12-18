@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.spatial import ConvexHull
 
+'''
+    This plot compares the runtime of our implementation with the runtime of the implementation of our reference paper
+    Lim et al. (2005).
+'''
 
 # import data
 data = pd.read_csv('experimental_results.csv',
