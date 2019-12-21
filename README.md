@@ -9,10 +9,10 @@ The following algorithms were implemented in Python 3.7.5 with numpy 1.17.4 and 
 Their performance is compared to the commercial solver Gurobi.
 
 Directory *metaheuristics*:
-Contains the implementation of Gurobi, Tabu Search, Bee Colony Optimization, Genetic and Memetic Algorithm. The instance generation and parameter setting is realized in the file *problem.py*. The file *gantt.py* enables the creation of a gantt chart for a given solution.
+Contains the implementation of Gurobi, Tabu Search, Bee Colony Optimization, Genetic and Memetic Algorithm. The instance generation and parameter setting is realized in *problem.py*. *gantt.py* enables the creation of a gantt chart for a given solution.
 
 Directory *experiments*:
-This folder contains the file *experimental_study.py* which starts a new run of an experiment. The result data of our conducted experiment was saved to the file *experimental_results.csv*. Besides these files there are multiple files for visualizing our result data. Each plot has it own file.
+Contains *experimental_study.py* which starts a new run of an experiment. The result data of our conducted experiment was saved to *experimental_results.csv*. Besides these files there are multiple files for visualizing our result data. Each plot has it own file.
 
 [1] Lim, Andrew, Brian Rodrigues, and Yi Zhu. "Airport gate scheduling with time windows." Artificial Intelligence Review 24.1 (2005): 5-31.
 
